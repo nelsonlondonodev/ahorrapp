@@ -18,3 +18,57 @@ La estilización se maneja con Tailwind CSS. La configuración se realizó sigui
 - **Supabase:** (Pendiente - se añadirá en el futuro)
 
 Este enfoque asegura que el desarrollo se mantenga alineado con las mejores prácticas y las guías oficiales de las tecnologías utilizadas.
+
+### Prompt Inicial del Proyecto
+
+"""Quiero crear un app web para el manejo de mis ingresos y egresos mensuales. Hecha con React.js, tailwind csss, para el backend con supabase. Con interfaz amigable, moderna e intuitiva. Esta debe hacer uso de librerías de reconocimiento de imágenes, para que con una fotografía de un ticket o factura, la pueda ingresar automáticamente y ordenar los ingresos y gastos en categorías, en una hoja de Google sheets como el archivo que te compartí. La voy a desplegar en mí VS code, y le refinaré con Gemini CLI desde mí VS code. Además la desplegaré en un repositorio en Github. Créame el primer prototipo."""
+
+### Respuesta Inicial de la IA
+
+"""
+Asistente de programación
+
+Mostrar razonamiento
+¡Excelente idea! Un gestor de finanzas personal es un proyecto fantástico para aplicar tus habilidades con React y explorar tecnologías como Supabase y el reconocimiento de imágenes.
+
+He preparado un primer prototipo funcional para ti. Se enfoca en una interfaz de usuario limpia y moderna, siguiendo las directrices que mencionaste. Este prototipo simula la funcionalidad de subir un recibo y extrae datos de él, además de establecer la estructura para que puedas integrar Supabase fácilmente.
+
+Aquí tienes el archivo para que empieces a trabajar.
+Gestor de Finanzas Personales
+3 sept, 7:08 p.m.
+
+ Probar de nuevo sin Canvas 
+
+Puntos Clave del Prototipo:
+Diseño Moderno con Tailwind CSS: La interfaz utiliza un tema oscuro, tarjetas con esquinas redondeadas y sombras sutiles para darle un aspecto limpio y actual.
+
+Componentes Reutilizables: He separado la lógica en componentes como SummaryCard, TransactionItem y AddTransactionModal, lo que facilita el mantenimiento y la escalabilidad.
+
+Simulación de OCR: En el modal AddTransactionModal, al seleccionar un archivo, se activa una simulación de escaneo. Después de 2 segundos, rellena automáticamente el formulario. Este es el lugar perfecto para que integres una librería o API de OCR como Tesseract.js o una API de terceros.
+
+Estructura para Supabase: He creado un objeto supabase simulado con funciones select e insert. En los comentarios del código, te indico exactamente dónde debes reemplazar esta simulación con las llamadas reales al cliente de Supabase.
+
+Estado centralizado: El componente principal App gestiona el estado de las transacciones y la visibilidad del modal, una práctica común y eficiente en React.
+
+Próximos Pasos Sugeridos:
+Configurar Supabase:
+
+Crea un nuevo proyecto en Supabase.
+
+Define una tabla transactions con columnas como id, date, description, amount, category, y type.
+
+Instala el cliente de Supabase (npm install @supabase/supabase-js) y configura tus claves de API en el proyecto.
+
+Integrar la API de OCR:
+
+Investiga librerías de OCR en JavaScript. Tesseract.js es una opción popular que se ejecuta en el navegador.
+
+Reemplaza la función setTimeout en el componente AddTransactionModal con la lógica para procesar la imagen subida y extraer el texto.
+
+Desplegar en GitHub:
+
+Crea un nuevo repositorio en tu cuenta de GitHub.
+
+Inicializa un repositorio de Git en tu proyecto local, haz tu primer commit y súbelo a GitHub.
+
+¡Este es un excelente punto de partida! Tienes una base sólida y visualmente atractiva para empezar a conectar el backend y las funcionalidades más complejas. ¡Mucho éxito con tu proyecto!"""
