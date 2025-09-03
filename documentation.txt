@@ -1,0 +1,20 @@
+## Documentación del Proyecto Ahorrapp
+
+Este documento resume la configuración inicial del proyecto y los recursos utilizados.
+
+### Configuración del Proyecto
+
+El proyecto fue inicializado usando Vite con la plantilla de React.
+
+La estilización se maneja con Tailwind CSS. La configuración se realizó siguiendo la documentación oficial para la integración con Vite, que incluye:
+- El uso del paquete `@tailwindcss/vite`.
+- La configuración del plugin de Tailwind en `vite.config.js`.
+- La importación de los estilos de Tailwind en `src/index.css` usando `@import "tailwindcss";`.
+
+### Recursos y Documentación
+
+- **React:** https://es.react.dev/learn
+- **Tailwind CSS (con Vite):** https://tailwindcss.com/docs/installation/using-vite
+- **Supabase:** (Pendiente - se añadirá en el futuro)
+
+Este enfoque asegura que el desarrollo se mantenga alineado con las mejores prácticas y las guías oficiales de las tecnologías utilizadas.
