@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
+import CalendarView from './components/CalendarView';
 
 // --- ICONOS SVG (Componentes) ---
 // Usamos componentes de React para los iconos SVG para mantener el código limpio.
@@ -107,7 +108,7 @@ function TransactionItem({ transaction, onEdit, onDelete }) {
     const { description, category, amount, type, date } = transaction;
     const isExpense = type === 'expense';
     const formattedAmount = (isExpense ? -amount : amount).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-    const formattedDate = new Date(date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+    const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', timeZone: 'Europe/Madrid' });
 
     return (
         <li className="flex items-center justify-between p-4 bg-slate-800 rounded-lg mb-3">
@@ -202,7 +203,13 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
             amount: parseFloat(amount),
             category,
             type,
-            date: transactionToEdit?.date || new Date().toISOString().split('T')[0],
+            date: transactionToEdit?.date || (() => {
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            })(),
         };
 
         onSave(transactionData);
@@ -277,6 +284,8 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
+  const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
 
   // Cargar transacciones iniciales
   useEffect(() => {
@@ -285,7 +294,7 @@ export default function App() {
       if (error) {
         console.error('Error al obtener transacciones:', error);
       } else {
-        setTransactions(data);
+        setTransactions(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
       }
     };
     fetchTransactions();
@@ -298,7 +307,7 @@ export default function App() {
     if (error) {
         console.error('Error al añadir transacción:', error);
     } else {
-        setTransactions(prev => [...prev, ...data]);
+        setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date) - new Date(a.date)));
     }
   };
 
@@ -307,7 +316,7 @@ export default function App() {
     if (error) {
         console.error('Error al actualizar transacción:', error);
     } else {
-        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t));
+        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date) - new Date(a.date)));
     }
   };
 
@@ -338,6 +347,11 @@ export default function App() {
       setEditingTransaction(null);
   }
 
+  const handleDateClick = (date) => {
+      setSelectedDate(date);
+      setViewMode('list');
+  }
+
   // Cálculos para el resumen
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -348,6 +362,10 @@ export default function App() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpense;
+
+  const filteredTransactions = selectedDate
+    ? transactions.filter(t => t.date === selectedDate)
+    : transactions;
 
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans">
@@ -377,15 +395,40 @@ export default function App() {
           </SummaryCard>
         </div>
 
-        {/* Lista de transacciones recientes */}
+        {/* Selector de Vista */}
+        <div className="mb-6 flex justify-center bg-slate-800 rounded-lg p-1">
+            <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Lista</button>
+            <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Calendario</button>
+        </div>
+
+        {/* Contenido Principal */}
         <main>
-            <h2 className="text-2xl font-bold text-white mb-4">Transacciones Recientes</h2>
-            <ul>
-                {transactions.length > 0 
-                    ? transactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
-                    : <p className="text-slate-500 text-center py-8">No hay transacciones todavía.</p>
-                }
-            </ul>
+            {viewMode === 'list' && (
+                <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-white">
+                            {selectedDate 
+                                ? `Transacciones del ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' })}`
+                                : 'Transacciones Recientes'}
+                        </h2>
+                        {selectedDate && (
+                            <button onClick={() => setSelectedDate(null)} className="text-sky-400 hover:text-sky-300 font-bold">
+                                Mostrar todas
+                            </button>
+                        )}
+                    </div>
+                    <ul>
+                        {filteredTransactions.length > 0 
+                            ? filteredTransactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
+                            : <p className="text-slate-500 text-center py-8">No hay transacciones {selectedDate ? 'para esta fecha' : 'todavía'}.</p>
+                        }
+                    </ul>
+                </div>
+            )}
+
+            {viewMode === 'calendar' && (
+                <CalendarView transactions={transactions} onDateClick={handleDateClick} />
+            )}
         </main>
 
         {/* Botón flotante para añadir transacción */}
