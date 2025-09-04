@@ -137,11 +137,12 @@ function TransactionItem({ transaction, onEdit, onDelete }) {
 }
 
 // Modal para añadir o editar una transacción
-function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
+function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate }) {
     const [description, setDescription] = useState(transactionToEdit?.description || '');
     const [amount, setAmount] = useState(transactionToEdit?.amount || '');
     const [category, setCategory] = useState(transactionToEdit?.category || 'Comida');
     const [type, setType] = useState(transactionToEdit?.type || 'expense');
+    const [date, setDate] = useState(transactionToEdit?.date || selectedDate || new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
     const [fileName, setFileName] = useState('');
 
@@ -203,13 +204,7 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
             amount: parseFloat(amount),
             category,
             type,
-            date: transactionToEdit?.date || (() => {
-                const d = new Date();
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            })(),
+            date,
         };
 
         onSave(transactionData);
@@ -256,7 +251,7 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
                              </select>
                         </div>
                     </div>
-                     <div className="mb-6">
+                     <div className="mb-4">
                         <label className="block text-slate-400 text-sm font-bold mb-2">Categoría</label>
                         <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
                            <option>Comida</option>
@@ -266,6 +261,10 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
                            <option>Salario</option>
                            <option>Otros</option>
                         </select>
+                    </div>
+                    <div className="mb-6">
+                        <label className="block text-slate-400 text-sm font-bold mb-2">Fecha</label>
+                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                     </div>
 
                     <div className="flex justify-end gap-4">
@@ -284,7 +283,7 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
+  const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
 
   // Cargar transacciones iniciales
@@ -446,6 +445,7 @@ export default function App() {
             onClose={closeModal}
             onSave={handleSaveTransaction}
             transactionToEdit={editingTransaction}
+            selectedDate={selectedDate}
         />}
 
       </div>
