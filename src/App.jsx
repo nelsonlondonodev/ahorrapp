@@ -27,31 +27,57 @@ const ArrowDownIcon = () => (
     </svg>
 );
 
-// --- SIMULACIÓN DE BACKEND (Supabase) ---
-// Estas funciones simulan cómo interactuarías con Supabase.
-// Deberás reemplazarlas con las llamadas reales a la API de Supabase.
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
 
-const mockTransactions = [
-  { id: 1, description: 'Salario Mensual', amount: 2500, type: 'income', category: 'Salario', date: '2025-08-01' },
-  { id: 2, description: 'Alquiler Apartamento', amount: 850, type: 'expense', category: 'Vivienda', date: '2025-08-02' },
-  { id: 3, description: 'Compra en supermercado', amount: 120.50, type: 'expense', category: 'Comida', date: '2025-08-03' },
-  { id: 4, description: 'Factura Internet', amount: 55, type: 'expense', category: 'Servicios', date: '2025-08-05' },
-  { id: 5, description: 'Venta de artículo online', amount: 75, type: 'income', category: 'Otros Ingresos', date: '2025-08-06' },
-];
+const EditIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" />
+  </svg>
+);
+
+
+// --- SIMULACIÓN DE BACKEND (Supabase) ---
+// Usamos localStorage para persistir los datos en el navegador.
+const getMockTransactions = () => JSON.parse(localStorage.getItem('transactions')) || [];
+const setMockTransactions = (transactions) => localStorage.setItem('transactions', JSON.stringify(transactions));
 
 const supabase = {
   from: () => ({
     select: async () => {
-      console.log('SUPABASE MOCK: Obteniendo transacciones...');
-      return { data: mockTransactions, error: null };
+      console.log('SUPABASE MOCK: Obteniendo transacciones desde localStorage...');
+      const data = getMockTransactions();
+      return { data, error: null };
     },
     insert: async (newTransaction) => {
-      console.log('SUPABASE MOCK: Insertando nueva transacción:', newTransaction);
-      const newId = Math.max(...mockTransactions.map(t => t.id)) + 1;
+      console.log('SUPABASE MOCK: Insertando nueva transacción en localStorage:', newTransaction);
+      const transactions = getMockTransactions();
+      const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
       const transactionWithId = { ...newTransaction, id: newId };
-      mockTransactions.push(transactionWithId);
+      const newTransactions = [...transactions, transactionWithId];
+      setMockTransactions(newTransactions);
       return { data: [transactionWithId], error: null };
     },
+    delete: async ({ id }) => {
+      console.log('SUPABASE MOCK: Eliminando transacción con id de localStorage:', id);
+      let transactions = getMockTransactions();
+      transactions = transactions.filter(t => t.id !== id);
+      setMockTransactions(transactions);
+      return { error: null };
+    },
+    update: async (updatedTransaction) => {
+        console.log('SUPABASE MOCK: Actualizando transacción en localStorage:', updatedTransaction);
+        let transactions = getMockTransactions();
+        const index = transactions.findIndex(t => t.id === updatedTransaction.id);
+        if (index > -1) {
+            transactions[index] = updatedTransaction;
+            setMockTransactions(transactions);
+        }
+        return { data: [updatedTransaction], error: null };
+    }
   }),
 };
 
@@ -77,7 +103,7 @@ function SummaryCard({ title, amount, children, colorClass }) {
 }
 
 // Elemento individual de la lista de transacciones
-function TransactionItem({ transaction }) {
+function TransactionItem({ transaction, onEdit, onDelete }) {
     const { description, category, amount, type, date } = transaction;
     const isExpense = type === 'expense';
     const formattedAmount = (isExpense ? -amount : amount).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
@@ -94,19 +120,27 @@ function TransactionItem({ transaction }) {
                     <p className="text-slate-400 text-sm">{category} - {formattedDate}</p>
                 </div>
             </div>
-            <p className={`font-bold ${isExpense ? 'text-red-400' : 'text-green-400'}`}>
-                {formattedAmount}
-            </p>
+            <div className="flex items-center space-x-2">
+                <p className={`font-bold ${isExpense ? 'text-red-400' : 'text-green-400'}`}>
+                    {formattedAmount}
+                </p>
+                <button onClick={() => onEdit(transaction)} className="text-slate-500 hover:text-white p-2 rounded-full hover:bg-slate-700">
+                    <EditIcon />
+                </button>
+                <button onClick={() => onDelete(transaction.id)} className="text-slate-500 hover:text-white p-2 rounded-full hover:bg-slate-700">
+                    <TrashIcon />
+                </button>
+            </div>
         </li>
     );
 }
 
-// Modal para añadir una nueva transacción
-function AddTransactionModal({ onClose, onAddTransaction }) {
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('Comida');
-    const [type, setType] = useState('expense');
+// Modal para añadir o editar una transacción
+function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
+    const [description, setDescription] = useState(transactionToEdit?.description || '');
+    const [amount, setAmount] = useState(transactionToEdit?.amount || '');
+    const [category, setCategory] = useState(transactionToEdit?.category || 'Comida');
+    const [type, setType] = useState(transactionToEdit?.type || 'expense');
     const [isScanning, setIsScanning] = useState(false);
     const [fileName, setFileName] = useState('');
 
@@ -134,20 +168,24 @@ function AddTransactionModal({ onClose, onAddTransaction }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!description || !amount) return;
-        onAddTransaction({
+        
+        const transactionData = {
+            ...transactionToEdit,
             description,
             amount: parseFloat(amount),
             category,
             type,
-            date: new Date().toISOString().split('T')[0], // Fecha actual
-        });
+            date: transactionToEdit?.date || new Date().toISOString().split('T')[0],
+        };
+
+        onSave(transactionData);
         onClose();
     };
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-                <h2 className="text-white text-2xl font-bold mb-6">Añadir Transacción</h2>
+                <h2 className="text-white text-2xl font-bold mb-6">{transactionToEdit ? 'Editar' : 'Añadir'} Transacción</h2>
 
                 {/* Área para subir archivo */}
                 <label htmlFor="receipt-upload" className="mb-4 cursor-pointer bg-slate-700 border-2 border-dashed border-slate-500 rounded-lg flex flex-col items-center justify-center p-6 text-center hover:bg-slate-600 transition-colors">
@@ -211,11 +249,11 @@ function AddTransactionModal({ onClose, onAddTransaction }) {
 export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
-  // Cargar transacciones iniciales (simulando useEffect con Supabase)
+  // Cargar transacciones iniciales
   useEffect(() => {
     const fetchTransactions = async () => {
-      // Reemplaza esto con tu llamada real a Supabase
       const { data, error } = await supabase.from('transactions').select('*');
       if (error) {
         console.error('Error al obtener transacciones:', error);
@@ -226,17 +264,52 @@ export default function App() {
     fetchTransactions();
   }, []);
 
-  // Función para añadir una nueva transacción
+  // --- Funciones CRUD ---
+
   const handleAddTransaction = async (newTransaction) => {
-    // Reemplaza esto con tu llamada real a Supabase
     const { data, error } = await supabase.from('transactions').insert(newTransaction);
     if (error) {
         console.error('Error al añadir transacción:', error);
     } else {
-        // Actualizamos el estado con la respuesta de la "API"
         setTransactions(prev => [...prev, ...data]);
     }
   };
+
+  const handleUpdateTransaction = async (updatedTransaction) => {
+    const { data, error } = await supabase.from('transactions').update(updatedTransaction);
+    if (error) {
+        console.error('Error al actualizar transacción:', error);
+    } else {
+        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t));
+    }
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    const { error } = await supabase.from('transactions').delete({ id });
+    if (error) {
+        console.error('Error al eliminar transacción:', error);
+    } else {
+        setTransactions(transactions.filter(t => t.id !== id));
+    }
+  };
+
+  const handleSaveTransaction = (transactionData) => {
+      if (transactionData.id) {
+          handleUpdateTransaction(transactionData);
+      } else {
+          handleAddTransaction(transactionData);
+      }
+  }
+
+  const openModalForEdit = (transaction) => {
+      setEditingTransaction(transaction);
+      setIsModalOpen(true);
+  }
+
+  const closeModal = () => {
+      setIsModalOpen(false);
+      setEditingTransaction(null);
+  }
 
   // Cálculos para el resumen
   const totalIncome = transactions
@@ -254,9 +327,14 @@ export default function App() {
       <div className="container mx-auto p-4 md:p-8">
         
         {/* Cabecera */}
-        <header className="mb-8">
-          <h1 className="text-4xl font-bold text-white">Resumen Financiero</h1>
-          <p className="text-slate-400">Bienvenido de nuevo, aquí tienes el estado de tus finanzas.</p>
+        <header className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <div className="bg-slate-800 p-3 rounded-full">
+              <span className="text-white font-bold text-lg">A</span>
+            </div>
+            <h1 className="text-2xl font-bold text-white">Ahorrapp</h1>
+          </div>
+          <p className="text-slate-400 hidden md:block">Bienvenido de nuevo</p>
         </header>
 
         {/* Resumen de tarjetas */}
@@ -277,7 +355,7 @@ export default function App() {
             <h2 className="text-2xl font-bold text-white mb-4">Transacciones Recientes</h2>
             <ul>
                 {transactions.length > 0 
-                    ? transactions.map(tx => <TransactionItem key={tx.id} transaction={tx} />)
+                    ? transactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
                     : <p className="text-slate-500 text-center py-8">No hay transacciones todavía.</p>
                 }
             </ul>
@@ -295,8 +373,9 @@ export default function App() {
 
         {/* Modal */}
         {isModalOpen && <AddTransactionModal 
-            onClose={() => setIsModalOpen(false)}
-            onAddTransaction={handleAddTransaction}
+            onClose={closeModal}
+            onSave={handleSaveTransaction}
+            transactionToEdit={editingTransaction}
         />}
 
       </div>
