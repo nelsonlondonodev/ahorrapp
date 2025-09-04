@@ -21,7 +21,8 @@ const customCalendarStyles = `
   
   .react-calendar__navigation button:hover,
   .react-calendar__navigation button:focus {
-    background-color: #334155; /* bg-slate-700 */
+    background-color: #334155 !important; /* bg-slate-700 */
+    color: #38bdf8; /* text-sky-400 */
   }
 
   .react-calendar__month-view__weekdays__weekday {
