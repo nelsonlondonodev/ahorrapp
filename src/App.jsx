@@ -396,8 +396,8 @@ export default function App() {
 
         {/* Selector de Vista */}
         <div className="mb-6 flex justify-center bg-slate-800 rounded-lg p-1">
-            <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Lista</button>
-            <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Calendario</button>
+            <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Lista</button>
+            <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Calendario</button>
         </div>
 
         {/* Contenido Principal */}
