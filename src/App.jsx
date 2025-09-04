@@ -144,25 +144,52 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit }) {
     const [isScanning, setIsScanning] = useState(false);
     const [fileName, setFileName] = useState('');
 
-    // SIMULACIÓN DE OCR
-    const handleFileChange = (event) => {
+    const handleFileChange = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
 
         setFileName(file.name);
         setIsScanning(true);
 
-        // Aquí iría la llamada a tu API de reconocimiento de imágenes.
-        // Simulamos una espera de 2 segundos para el procesamiento.
-        setTimeout(() => {
-            // Datos simulados extraídos del recibo
-            setDescription('Compra en Mercadona');
-            setAmount('78.34');
-            setCategory('Comida');
-            setType('expense');
+        try {
+            const { data: { text } } = await Tesseract.recognize(
+                file,
+                'spa', // Spanish language
+                {
+                    logger: m => console.log(m), // Log progress
+                }
+            );
+
+            console.log('Texto extraído:', text);
+
+            // --- Lógica para extraer datos del texto ---
+            let extractedAmount = '';
+            let extractedDescription = 'Gasto'; // Default description
+
+            // 1. Extraer el importe (expresión regular más robusta)
+            const amountRegex = /(?:TOTAL|IMPORTE|PAGAR|EUR)\s*:?\s*([0-9]+(?:[.,][0-9]{1,2})?)/i;
+            const amountMatch = text.match(amountRegex);
+            if (amountMatch && amountMatch[1]) {
+                extractedAmount = amountMatch[1].replace(',', '.'); // Normalizar a punto decimal
+            }
+
+            // 2. Extraer la descripción (primera línea no vacía)
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length > 0) {
+                extractedDescription = lines[0].trim();
+            }
+            
+            // --- Actualizar el estado ---
+            if(extractedAmount) setAmount(extractedAmount);
+            if(extractedDescription) setDescription(extractedDescription);
+            setType('expense'); // Asumimos que los recibos son siempre gastos
+
+        } catch (error) {
+            console.error('Error durante el OCR:', error);
+            // Maybe show an error message to the user
+        } finally {
             setIsScanning(false);
-            console.log('OCR Simulado: Datos extraídos del recibo.');
-        }, 2000);
+        }
     };
     
     const handleSubmit = (e) => {
