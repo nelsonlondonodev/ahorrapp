@@ -160,7 +160,16 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
     
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!description || !amount) return;
+
+        // --- Validación de Entradas ---
+        if (description.trim() === '') {
+            toast.error('La descripción no puede estar vacía.');
+            return;
+        }
+        if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            toast.error('La cantidad debe ser un número positivo.');
+            return;
+        }
 
         setIsSaving(true);
         
