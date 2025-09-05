@@ -240,17 +240,81 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
 }
 
 
+// --- Componente de Autenticación ---
+function Auth({ supabase }) {
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        if (error) {
+            alert(error.error_description || error.message);
+        } else {
+            alert('¡Revisa tu correo para el enlace de inicio de sesión!');
+        }
+        setLoading(false);
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
+            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
+                <h1 className="text-3xl font-bold text-white text-center mb-2">Ahorrapp</h1>
+                <p className="text-slate-400 text-center mb-8">Inicia sesión con un enlace mágico</p>
+                <form onSubmit={handleLogin}>
+                    <div className="mb-4">
+                        <label htmlFor="email" className="block text-slate-400 text-sm font-bold mb-2">Correo Electrónico</label>
+                        <input
+                            id="email"
+                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            type="email"
+                            placeholder="tu@email.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="mt-6">
+                        <button 
+                            className="w-full bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50"
+                            disabled={loading}
+                        >
+                            {loading ? <span>Enviando...</span> : <span>Enviar enlace mágico</span>}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+
 // --- Componente Principal de la Aplicación ---
 export default function App() {
+  const [session, setSession] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Cargar transacciones iniciales
   useEffect(() => {
     const fetchTransactions = async () => {
+      if (!session) return; // No hacer nada si no hay sesión
       const { data, error } = await supabase.from('transactions').select('*');
       if (error) {
         console.error('Error al obtener transacciones:', error);
@@ -259,7 +323,8 @@ export default function App() {
       }
     };
     fetchTransactions();
-  }, []);
+  }, [session]); // Volver a ejecutar si la sesión cambia
+
 
   // --- Funciones CRUD ---
 
@@ -328,6 +393,10 @@ export default function App() {
     ? transactions.filter(t => t.date === selectedDate)
     : transactions;
 
+  if (!session) {
+    return <Auth supabase={supabase} />;
+  }
+
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans">
       <div className="container mx-auto p-4 md:p-8">
@@ -340,7 +409,15 @@ export default function App() {
             </div>
             <h1 className="text-2xl font-bold text-white">Ahorrapp</h1>
           </div>
-          <p className="text-slate-400 hidden md:block">Bienvenido de nuevo</p>
+          <div className="flex items-center space-x-4">
+            <p className="text-slate-400 hidden md:block">{session.user.email}</p>
+            <button 
+              onClick={() => supabase.auth.signOut()}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </header>
 
         {/* Resumen de tarjetas */}
