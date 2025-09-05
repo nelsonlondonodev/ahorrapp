@@ -1,6 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import CalendarView from './components/CalendarView';
+import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 
 // --- ICONOS SVG (Componentes) ---
@@ -106,6 +107,7 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
     const [type, setType] = useState(transactionToEdit?.type || 'expense');
     const [date, setDate] = useState(transactionToEdit?.date || selectedDate || new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [fileName, setFileName] = useState('');
 
     const handleFileChange = async (event) => {
@@ -156,9 +158,11 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
         }
     };
     
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!description || !amount) return;
+
+        setIsSaving(true);
         
         const transactionData = {
             ...transactionToEdit,
@@ -169,7 +173,8 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
             date,
         };
 
-        onSave(transactionData);
+        await onSave(transactionData);
+        setIsSaving(false);
         onClose();
     };
 
@@ -231,7 +236,13 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
 
                     <div className="flex justify-end gap-4">
                         <button type="button" onClick={onClose} className="text-slate-300 font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors">Cancelar</button>
-                        <button type="submit" className="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20">Guardar</button>
+                        <button 
+                            type="submit" 
+                            className="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Guardando...' : 'Guardar'}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -329,38 +340,46 @@ export default function App() {
   // --- Funciones CRUD ---
 
   const handleAddTransaction = async (newTransaction) => {
-    const { data, error } = await supabase.from('transactions').insert(newTransaction).select(); // .select() to return the inserted data
+    const { data, error } = await supabase.from('transactions').insert(newTransaction).select();
     if (error) {
         console.error('Error al añadir transacción:', error);
-    } else {
-        setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        throw error;
     }
+    setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
 
   const handleUpdateTransaction = async (updatedTransaction) => {
-    const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select(); // .select() to return the updated data
+    const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select();
     if (error) {
         console.error('Error al actualizar transacción:', error);
-    } else {
-        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        throw error;
     }
+    setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
 
   const handleDeleteTransaction = async (id) => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) {
-        console.error('Error al eliminar transacción:', error);
-    } else {
-        setTransactions(transactions.filter(t => t.id !== id));
-    }
+    const promise = supabase.from('transactions').delete().eq('id', id);
+
+    toast.promise(promise, {
+        loading: 'Eliminando...',
+        success: () => {
+            setTransactions(transactions.filter(t => t.id !== id));
+            return 'Transacción eliminada';
+        },
+        error: 'Error al eliminar la transacción',
+    });
   };
 
-  const handleSaveTransaction = (transactionData) => {
-      if (transactionData.id) {
-          handleUpdateTransaction(transactionData);
-      } else {
-          handleAddTransaction(transactionData);
-      }
+  const handleSaveTransaction = async (transactionData) => {
+      const promise = transactionData.id
+          ? handleUpdateTransaction(transactionData)
+          : handleAddTransaction(transactionData);
+      
+      toast.promise(promise, {
+          loading: 'Guardando...',
+          success: 'Transacción guardada',
+          error: 'Error al guardar la transacción',
+      });
   }
 
   const openModalForEdit = (transaction) => {
@@ -399,6 +418,9 @@ export default function App() {
 
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans">
+      <Toaster position="bottom-center" toastOptions={{
+        className: 'bg-slate-800 text-white',
+      }}/>
       <div className="container mx-auto p-4 md:p-8">
         
         {/* Cabecera */}
