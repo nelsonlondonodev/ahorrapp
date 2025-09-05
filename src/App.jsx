@@ -1,6 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import CalendarView from './components/CalendarView';
+import { supabase } from './supabaseClient';
 
 // --- ICONOS SVG (Componentes) ---
 // Usamos componentes de React para los iconos SVG para mantener el código limpio.
@@ -41,46 +42,7 @@ const EditIcon = () => (
 );
 
 
-// --- SIMULACIÓN DE BACKEND (Supabase) ---
-// Usamos localStorage para persistir los datos en el navegador.
-const getMockTransactions = () => JSON.parse(localStorage.getItem('transactions')) || [];
-const setMockTransactions = (transactions) => localStorage.setItem('transactions', JSON.stringify(transactions));
 
-const supabase = {
-  from: () => ({
-    select: async () => {
-      console.log('SUPABASE MOCK: Obteniendo transacciones desde localStorage...');
-      const data = getMockTransactions();
-      return { data, error: null };
-    },
-    insert: async (newTransaction) => {
-      console.log('SUPABASE MOCK: Insertando nueva transacción en localStorage:', newTransaction);
-      const transactions = getMockTransactions();
-      const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
-      const transactionWithId = { ...newTransaction, id: newId };
-      const newTransactions = [...transactions, transactionWithId];
-      setMockTransactions(newTransactions);
-      return { data: [transactionWithId], error: null };
-    },
-    delete: async ({ id }) => {
-      console.log('SUPABASE MOCK: Eliminando transacción con id de localStorage:', id);
-      let transactions = getMockTransactions();
-      transactions = transactions.filter(t => t.id !== id);
-      setMockTransactions(transactions);
-      return { error: null };
-    },
-    update: async (updatedTransaction) => {
-        console.log('SUPABASE MOCK: Actualizando transacción en localStorage:', updatedTransaction);
-        let transactions = getMockTransactions();
-        const index = transactions.findIndex(t => t.id === updatedTransaction.id);
-        if (index > -1) {
-            transactions[index] = updatedTransaction;
-            setMockTransactions(transactions);
-        }
-        return { data: [updatedTransaction], error: null };
-    }
-  }),
-};
 
 // --- Componentes de la UI ---
 
@@ -293,7 +255,7 @@ export default function App() {
       if (error) {
         console.error('Error al obtener transacciones:', error);
       } else {
-        setTransactions(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setTransactions(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
     };
     fetchTransactions();
@@ -302,25 +264,25 @@ export default function App() {
   // --- Funciones CRUD ---
 
   const handleAddTransaction = async (newTransaction) => {
-    const { data, error } = await supabase.from('transactions').insert(newTransaction);
+    const { data, error } = await supabase.from('transactions').insert(newTransaction).select(); // .select() to return the inserted data
     if (error) {
         console.error('Error al añadir transacción:', error);
     } else {
-        setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
   };
 
   const handleUpdateTransaction = async (updatedTransaction) => {
-    const { data, error } = await supabase.from('transactions').update(updatedTransaction);
+    const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select(); // .select() to return the updated data
     if (error) {
         console.error('Error al actualizar transacción:', error);
     } else {
-        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
   };
 
   const handleDeleteTransaction = async (id) => {
-    const { error } = await supabase.from('transactions').delete({ id });
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) {
         console.error('Error al eliminar transacción:', error);
     } else {
