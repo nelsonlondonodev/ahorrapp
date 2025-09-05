@@ -324,6 +324,8 @@ export default function App() {
   const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'income', or 'expense'
+  const [sortKey, setSortKey] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -437,6 +439,24 @@ export default function App() {
         return t.type === typeFilter;
     });
 
+  const sortedAndFilteredTransactions = [...filteredTransactions].sort((a, b) => {
+    let valA = a[sortKey];
+    let valB = b[sortKey];
+
+    if (sortKey === 'date') {
+        valA = new Date(valA).getTime();
+        valB = new Date(valB).getTime();
+    }
+
+    if (valA < valB) {
+        return sortOrder === 'asc' ? -1 : 1;
+    }
+    if (valA > valB) {
+        return sortOrder === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
   if (!session) {
     return <Auth supabase={supabase} />;
   }
@@ -497,6 +517,26 @@ export default function App() {
                         <button onClick={() => setTypeFilter('expense')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'expense' ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
                     </div>
 
+                    {/* Controles de Ordenación */}
+                    <div className="flex justify-end mb-4">
+                        <select 
+                            onChange={(e) => {
+                                const [key, order] = e.target.value.split('-');
+                                setSortKey(key);
+                                setSortOrder(order);
+                            }}
+                            value={`${sortKey}-${sortOrder}`}
+                            className="bg-slate-800 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        >
+                            <option value="date-desc">Fecha (Más reciente)</option>
+                            <option value="date-asc">Fecha (Más antigua)</option>
+                            <option value="amount-desc">Cantidad (Mayor a menor)</option>
+                            <option value="amount-asc">Cantidad (Menor a mayor)</option>
+                            <option value="description-asc">Descripción (A-Z)</option>
+                            <option value="description-desc">Descripción (Z-A)</option>
+                        </select>
+                    </div>
+
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-white">
                             {selectedDate 
@@ -510,8 +550,8 @@ export default function App() {
                         )}
                     </div>
                     <ul>
-                        {filteredTransactions.length > 0 
-                            ? filteredTransactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
+                        {sortedAndFilteredTransactions.length > 0 
+                            ? sortedAndFilteredTransactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
                             : <p className="text-slate-500 text-center py-8">No hay transacciones {selectedDate ? 'para esta fecha' : 'todavía'}.</p>
                         }
                     </ul>
