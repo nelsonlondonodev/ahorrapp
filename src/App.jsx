@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CalendarView from './components/CalendarView';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
@@ -109,6 +109,11 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
     const [isScanning, setIsScanning] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [fileName, setFileName] = useState('');
+    const descriptionInputRef = useRef(null);
+
+    useEffect(() => {
+        descriptionInputRef.current?.focus();
+    }, []);
 
     const handleFileChange = async (event) => {
         const file = event.target.files[0];
@@ -212,7 +217,7 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label className="block text-slate-400 text-sm font-bold mb-2">Descripción</label>
-                        <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Ej: Café con amigos"/>
+                        <input ref={descriptionInputRef} type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Ej: Café con amigos"/>
                     </div>
                     <div className="flex gap-4 mb-4">
                         <div className="flex-1">
