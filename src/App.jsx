@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import CalendarView from './components/CalendarView';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
@@ -67,7 +67,7 @@ function SummaryCard({ title, amount, children, colorClass }) {
 }
 
 // Elemento individual de la lista de transacciones
-function TransactionItem({ transaction, onEdit, onDelete }) {
+const TransactionItem = memo(function TransactionItem({ transaction, onEdit, onDelete }) {
     const { description, category, amount, type, date } = transaction;
     const isExpense = type === 'expense';
     const formattedAmount = (isExpense ? -amount : amount).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
@@ -97,7 +97,7 @@ function TransactionItem({ transaction, onEdit, onDelete }) {
             </div>
         </li>
     );
-}
+});
 
 // Modal para añadir o editar una transacción
 function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate }) {
@@ -323,6 +323,7 @@ export default function App() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
+  const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'income', or 'expense'
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -353,38 +354,38 @@ export default function App() {
 
   // --- Funciones CRUD ---
 
-  const handleAddTransaction = async (newTransaction) => {
+  const handleAddTransaction = useCallback(async (newTransaction) => {
     const { data, error } = await supabase.from('transactions').insert(newTransaction).select();
     if (error) {
         console.error('Error al añadir transacción:', error);
         throw error;
     }
     setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  };
+  }, []);
 
-  const handleUpdateTransaction = async (updatedTransaction) => {
+  const handleUpdateTransaction = useCallback(async (updatedTransaction) => {
     const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select();
     if (error) {
         console.error('Error al actualizar transacción:', error);
         throw error;
     }
-    setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  };
+    setTransactions(prev => prev.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  }, []);
 
-  const handleDeleteTransaction = async (id) => {
+  const handleDeleteTransaction = useCallback(async (id) => {
     const promise = supabase.from('transactions').delete().eq('id', id);
 
     toast.promise(promise, {
         loading: 'Eliminando...',
         success: () => {
-            setTransactions(transactions.filter(t => t.id !== id));
+            setTransactions(prev => prev.filter(t => t.id !== id));
             return 'Transacción eliminada';
         },
         error: 'Error al eliminar la transacción',
     });
-  };
+  }, []);
 
-  const handleSaveTransaction = async (transactionData) => {
+  const handleSaveTransaction = useCallback(async (transactionData) => {
       const promise = transactionData.id
           ? handleUpdateTransaction(transactionData)
           : handleAddTransaction(transactionData);
@@ -394,12 +395,12 @@ export default function App() {
           success: 'Transacción guardada',
           error: 'Error al guardar la transacción',
       });
-  }
+  }, [handleAddTransaction, handleUpdateTransaction]);
 
-  const openModalForEdit = (transaction) => {
+  const openModalForEdit = useCallback((transaction) => {
       setEditingTransaction(transaction);
       setIsModalOpen(true);
-  }
+  }, []);
 
   const closeModal = () => {
       setIsModalOpen(false);
@@ -422,9 +423,19 @@ export default function App() {
 
   const balance = totalIncome - totalExpense;
 
-  const filteredTransactions = selectedDate
-    ? transactions.filter(t => t.date === selectedDate)
-    : transactions;
+  const filteredTransactions = transactions
+    .filter(t => {
+        if (selectedDate) {
+            return t.date === selectedDate;
+        }
+        return true;
+    })
+    .filter(t => {
+        if (typeFilter === 'all') {
+            return true;
+        }
+        return t.type === typeFilter;
+    });
 
   if (!session) {
     return <Auth supabase={supabase} />;
@@ -479,6 +490,13 @@ export default function App() {
         <main>
             {viewMode === 'list' && (
                 <div>
+                    {/* Filtros de tipo */}
+                    <div className="flex justify-center space-x-2 mb-6 bg-slate-800 p-1 rounded-lg">
+                        <button onClick={() => setTypeFilter('all')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'all' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
+                        <button onClick={() => setTypeFilter('income')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'income' ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
+                        <button onClick={() => setTypeFilter('expense')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'expense' ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
+                    </div>
+
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-white">
                             {selectedDate 
