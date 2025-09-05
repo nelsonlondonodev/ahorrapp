@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import CalendarView from './components/CalendarView';
+import toast, { Toaster } from 'react-hot-toast';
+import { supabase } from './supabaseClient';
 
 // --- ICONOS SVG (Componentes) ---
 // Usamos componentes de React para los iconos SVG para mantener el código limpio.
@@ -41,46 +43,7 @@ const EditIcon = () => (
 );
 
 
-// --- SIMULACIÓN DE BACKEND (Supabase) ---
-// Usamos localStorage para persistir los datos en el navegador.
-const getMockTransactions = () => JSON.parse(localStorage.getItem('transactions')) || [];
-const setMockTransactions = (transactions) => localStorage.setItem('transactions', JSON.stringify(transactions));
 
-const supabase = {
-  from: () => ({
-    select: async () => {
-      console.log('SUPABASE MOCK: Obteniendo transacciones desde localStorage...');
-      const data = getMockTransactions();
-      return { data, error: null };
-    },
-    insert: async (newTransaction) => {
-      console.log('SUPABASE MOCK: Insertando nueva transacción en localStorage:', newTransaction);
-      const transactions = getMockTransactions();
-      const newId = transactions.length > 0 ? Math.max(...transactions.map(t => t.id)) + 1 : 1;
-      const transactionWithId = { ...newTransaction, id: newId };
-      const newTransactions = [...transactions, transactionWithId];
-      setMockTransactions(newTransactions);
-      return { data: [transactionWithId], error: null };
-    },
-    delete: async ({ id }) => {
-      console.log('SUPABASE MOCK: Eliminando transacción con id de localStorage:', id);
-      let transactions = getMockTransactions();
-      transactions = transactions.filter(t => t.id !== id);
-      setMockTransactions(transactions);
-      return { error: null };
-    },
-    update: async (updatedTransaction) => {
-        console.log('SUPABASE MOCK: Actualizando transacción en localStorage:', updatedTransaction);
-        let transactions = getMockTransactions();
-        const index = transactions.findIndex(t => t.id === updatedTransaction.id);
-        if (index > -1) {
-            transactions[index] = updatedTransaction;
-            setMockTransactions(transactions);
-        }
-        return { data: [updatedTransaction], error: null };
-    }
-  }),
-};
 
 // --- Componentes de la UI ---
 
@@ -144,6 +107,7 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
     const [type, setType] = useState(transactionToEdit?.type || 'expense');
     const [date, setDate] = useState(transactionToEdit?.date || selectedDate || new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [fileName, setFileName] = useState('');
 
     const handleFileChange = async (event) => {
@@ -194,9 +158,20 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
         }
     };
     
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!description || !amount) return;
+
+        // --- Validación de Entradas ---
+        if (description.trim() === '') {
+            toast.error('La descripción no puede estar vacía.');
+            return;
+        }
+        if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            toast.error('La cantidad debe ser un número positivo.');
+            return;
+        }
+
+        setIsSaving(true);
         
         const transactionData = {
             ...transactionToEdit,
@@ -207,7 +182,8 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
             date,
         };
 
-        onSave(transactionData);
+        await onSave(transactionData);
+        setIsSaving(false);
         onClose();
     };
 
@@ -269,7 +245,63 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
 
                     <div className="flex justify-end gap-4">
                         <button type="button" onClick={onClose} className="text-slate-300 font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors">Cancelar</button>
-                        <button type="submit" className="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20">Guardar</button>
+                        <button 
+                            type="submit" 
+                            className="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Guardando...' : 'Guardar'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+
+// --- Componente de Autenticación ---
+function Auth({ supabase }) {
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        if (error) {
+            alert(error.error_description || error.message);
+        } else {
+            alert('¡Revisa tu correo para el enlace de inicio de sesión!');
+        }
+        setLoading(false);
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
+            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
+                <h1 className="text-3xl font-bold text-white text-center mb-2">Ahorrapp</h1>
+                <p className="text-slate-400 text-center mb-8">Inicia sesión con un enlace mágico</p>
+                <form onSubmit={handleLogin}>
+                    <div className="mb-4">
+                        <label htmlFor="email" className="block text-slate-400 text-sm font-bold mb-2">Correo Electrónico</label>
+                        <input
+                            id="email"
+                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            type="email"
+                            placeholder="tu@email.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="mt-6">
+                        <button 
+                            className="w-full bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50"
+                            disabled={loading}
+                        >
+                            {loading ? <span>Enviando...</span> : <span>Enviar enlace mágico</span>}
+                        </button>
                     </div>
                 </form>
             </div>
@@ -280,60 +312,83 @@ function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate 
 
 // --- Componente Principal de la Aplicación ---
 export default function App() {
+  const [session, setSession] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Cargar transacciones iniciales
   useEffect(() => {
     const fetchTransactions = async () => {
+      if (!session) return; // No hacer nada si no hay sesión
       const { data, error } = await supabase.from('transactions').select('*');
       if (error) {
         console.error('Error al obtener transacciones:', error);
       } else {
-        setTransactions(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setTransactions(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
     };
     fetchTransactions();
-  }, []);
+  }, [session]); // Volver a ejecutar si la sesión cambia
+
 
   // --- Funciones CRUD ---
 
   const handleAddTransaction = async (newTransaction) => {
-    const { data, error } = await supabase.from('transactions').insert(newTransaction);
+    const { data, error } = await supabase.from('transactions').insert(newTransaction).select();
     if (error) {
         console.error('Error al añadir transacción:', error);
-    } else {
-        setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date) - new Date(a.date)));
+        throw error;
     }
+    setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
 
   const handleUpdateTransaction = async (updatedTransaction) => {
-    const { data, error } = await supabase.from('transactions').update(updatedTransaction);
+    const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select();
     if (error) {
         console.error('Error al actualizar transacción:', error);
-    } else {
-        setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date) - new Date(a.date)));
+        throw error;
     }
+    setTransactions(transactions.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   };
 
   const handleDeleteTransaction = async (id) => {
-    const { error } = await supabase.from('transactions').delete({ id });
-    if (error) {
-        console.error('Error al eliminar transacción:', error);
-    } else {
-        setTransactions(transactions.filter(t => t.id !== id));
-    }
+    const promise = supabase.from('transactions').delete().eq('id', id);
+
+    toast.promise(promise, {
+        loading: 'Eliminando...',
+        success: () => {
+            setTransactions(transactions.filter(t => t.id !== id));
+            return 'Transacción eliminada';
+        },
+        error: 'Error al eliminar la transacción',
+    });
   };
 
-  const handleSaveTransaction = (transactionData) => {
-      if (transactionData.id) {
-          handleUpdateTransaction(transactionData);
-      } else {
-          handleAddTransaction(transactionData);
-      }
+  const handleSaveTransaction = async (transactionData) => {
+      const promise = transactionData.id
+          ? handleUpdateTransaction(transactionData)
+          : handleAddTransaction(transactionData);
+      
+      toast.promise(promise, {
+          loading: 'Guardando...',
+          success: 'Transacción guardada',
+          error: 'Error al guardar la transacción',
+      });
   }
 
   const openModalForEdit = (transaction) => {
@@ -366,8 +421,15 @@ export default function App() {
     ? transactions.filter(t => t.date === selectedDate)
     : transactions;
 
+  if (!session) {
+    return <Auth supabase={supabase} />;
+  }
+
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans">
+      <Toaster position="bottom-center" toastOptions={{
+        className: 'bg-slate-800 text-white',
+      }}/>
       <div className="container mx-auto p-4 md:p-8">
         
         {/* Cabecera */}
@@ -378,7 +440,15 @@ export default function App() {
             </div>
             <h1 className="text-2xl font-bold text-white">Ahorrapp</h1>
           </div>
-          <p className="text-slate-400 hidden md:block">Bienvenido de nuevo</p>
+          <div className="flex items-center space-x-4">
+            <p className="text-slate-400 hidden md:block">{session.user.email}</p>
+            <button 
+              onClick={() => supabase.auth.signOut()}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </header>
 
         {/* Resumen de tarjetas */}
@@ -396,8 +466,8 @@ export default function App() {
 
         {/* Selector de Vista */}
         <div className="mb-6 flex justify-center bg-slate-800 rounded-lg p-1">
-            <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Lista</button>
-            <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Calendario</button>
+            <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Lista</button>
+            <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Calendario</button>
         </div>
 
         {/* Contenido Principal */}
