@@ -1,6 +1,7 @@
 import React from 'react';
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import CalendarView from './components/CalendarView';
+import CategoryChart from './components/CategoryChart';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 
@@ -431,6 +432,17 @@ export default function App() {
 
   const balance = totalIncome - totalExpense;
 
+  const expensesByCategory = useMemo(() => {
+    const categoryMap = {};
+    transactions.filter(t => t.type === 'expense').forEach(t => {
+      categoryMap[t.category] = (categoryMap[t.category] || 0) + t.amount;
+    });
+    return Object.keys(categoryMap).map(category => ({
+      category,
+      total: categoryMap[category],
+    }));
+  }, [transactions]);
+
   const filteredTransactions = transactions
     .filter(t => {
         if (selectedDate) {
@@ -518,6 +530,7 @@ export default function App() {
         <div className="mb-6 flex justify-center bg-slate-800 rounded-lg p-1">
             <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Lista</button>
             <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Calendario</button>
+            <button onClick={() => setViewMode('analysis')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'analysis' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Análisis</button>
         </div>
 
         {/* Contenido Principal */}
@@ -595,6 +608,17 @@ export default function App() {
 
             {viewMode === 'calendar' && (
                 <CalendarView transactions={transactions} onDateClick={handleDateClick} />
+            )}
+
+            {viewMode === 'analysis' && (
+                <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+                    <h2 className="text-white text-2xl font-bold mb-4">Gastos por Categoría</h2>
+                    {expensesByCategory.length > 0 ? (
+                        <CategoryChart data={expensesByCategory} />
+                    ) : (
+                        <p className="text-slate-400 text-center py-8">No hay gastos para mostrar en el gráfico.</p>
+                    )}
+                </div>
             )}
         </main>
 
