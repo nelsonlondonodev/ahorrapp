@@ -326,6 +326,7 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'income', or 'expense'
   const [sortKey, setSortKey] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -352,6 +353,11 @@ export default function App() {
     };
     fetchTransactions();
   }, [session]); // Volver a ejecutar si la sesión cambia
+
+  // Resetear paginación cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [typeFilter, selectedDate, sortKey, sortOrder]);
 
 
   // --- Funciones CRUD ---
@@ -457,6 +463,14 @@ export default function App() {
     return 0;
   });
 
+  // --- Lógica de Paginación ---
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(sortedAndFilteredTransactions.length / itemsPerPage);
+  const paginatedTransactions = sortedAndFilteredTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (!session) {
     return <Auth supabase={supabase} />;
   }
@@ -550,11 +564,32 @@ export default function App() {
                         )}
                     </div>
                     <ul>
-                        {sortedAndFilteredTransactions.length > 0 
-                            ? sortedAndFilteredTransactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
-                            : <p className="text-slate-500 text-center py-8">No hay transacciones {selectedDate ? 'para esta fecha' : 'todavía'}.</p>
+                        {paginatedTransactions.length > 0 
+                            ? paginatedTransactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
+                            : <p className="text-slate-500 text-center py-8">No hay transacciones que coincidan con los filtros seleccionados.</p>
                         }
                     </ul>
+
+                    {/* Controles de Paginación */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center space-x-4 mt-6">
+                            <button 
+                                onClick={() => setCurrentPage(p => p - 1)} 
+                                disabled={currentPage === 1}
+                                className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Anterior
+                            </button>
+                            <span className="text-slate-400">Página {currentPage} de {totalPages}</span>
+                            <button 
+                                onClick={() => setCurrentPage(p => p + 1)} 
+                                disabled={currentPage === totalPages}
+                                className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
