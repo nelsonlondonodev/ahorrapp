@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import CalendarView from './components/CalendarView';
 import CategoryChart from './components/CategoryChart';
+import MonthlyChart from './components/MonthlyChart';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 
@@ -443,6 +444,61 @@ export default function App() {
     }));
   }, [transactions]);
 
+  const monthlyFinancialData = useMemo(() => {
+    const dataMap = new Map(); // Key: "YYYY-MM", Value: { income: 0, expense: 0 }
+
+    transactions.forEach(t => {
+      const date = new Date(t.date + 'T00:00:00'); // Ensure date is parsed correctly
+      const year = date.getFullYear();
+      const month = date.getMonth(); // 0-indexed
+
+      const monthYearKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+      if (!dataMap.has(monthYearKey)) {
+        dataMap.set(monthYearKey, { income: 0, expense: 0 });
+      }
+
+      const currentMonthData = dataMap.get(monthYearKey);
+      if (t.type === 'income') {
+        currentMonthData.income += t.amount;
+      } else {
+        currentMonthData.expense += t.amount;
+      }
+    });
+
+    // Sort keys chronologically
+    const sortedKeys = Array.from(dataMap.keys()).sort();
+
+    const labels = sortedKeys.map(key => {
+      const [year, month] = key.split('-');
+      const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleString('es-ES', { month: 'short' });
+      return `${monthName}. ${year}`;
+    });
+
+    const incomeData = sortedKeys.map(key => dataMap.get(key).income);
+    const expenseData = sortedKeys.map(key => dataMap.get(key).expense);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Ingresos',
+          data: incomeData,
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.5)',
+          tension: 0.1,
+        },
+        {
+          label: 'Gastos',
+          data: expenseData,
+          borderColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          tension: 0.1,
+        },
+      ],
+    };
+  }, [transactions]);
+
   const filteredTransactions = transactions
     .filter(t => {
         if (selectedDate) {
@@ -611,14 +667,23 @@ export default function App() {
             )}
 
             {viewMode === 'analysis' && (
-                <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-                    <h2 className="text-white text-2xl font-bold mb-4">Gastos por Categoría</h2>
-                    {expensesByCategory.length > 0 ? (
-                        <CategoryChart data={expensesByCategory} />
-                    ) : (
-                        <p className="text-slate-400 text-center py-8">No hay gastos para mostrar en el gráfico.</p>
-                    )}
-                </div>
+                <>
+                    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg mb-8">
+                        <h2 className="text-white text-2xl font-bold mb-4">Gastos por Categoría</h2>
+                        {expensesByCategory.length > 0 ? (
+                            <CategoryChart data={expensesByCategory} />
+                        ) : (
+                            <p className="text-slate-400 text-center py-8">No hay gastos para mostrar en el gráfico.</p>
+                        )}
+                    </div>
+                    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+                        {monthlyFinancialData.labels.length > 0 ? (
+                            <MonthlyChart data={monthlyFinancialData} />
+                        ) : (
+                            <p className="text-slate-400 text-center py-8">No hay datos suficientes para mostrar el gráfico de ingresos vs. gastos mensuales.</p>
+                        )}
+                    </div>
+                </>
             )}
         </main>
 
