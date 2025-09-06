@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import CalendarView from './components/CalendarView';
 import CategoryChart from './components/CategoryChart';
 import MonthlyChart from './components/MonthlyChart';
+import BudgetManager from './components/BudgetManager';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 
@@ -321,7 +322,22 @@ function Auth({ supabase }) {
 export default function App() {
   const [session, setSession] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [budgets, setBudgets] = useState([]); // New state for budgets
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch budgets
+  useEffect(() => {
+    const fetchBudgets = async () => {
+      if (!session) return;
+      const { data, error } = await supabase.from('budgets').select('*');
+      if (error) {
+        console.error('Error al obtener presupuestos:', error);
+      } else {
+        setBudgets(data);
+      }
+    };
+    fetchBudgets();
+  }, [session]); // Re-fetch if session changes
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
@@ -406,6 +422,39 @@ export default function App() {
           error: 'Error al guardar la transacción',
       });
   }, [handleAddTransaction, handleUpdateTransaction]);
+
+  // --- Funciones CRUD para Presupuestos ---
+
+  const handleAddBudget = useCallback(async (newBudget) => {
+    const { data, error } = await supabase.from('budgets').insert(newBudget).select();
+    if (error) {
+      console.error('Error al añadir presupuesto:', error);
+      throw error;
+    }
+    setBudgets(prev => [...prev, ...data]);
+  }, []);
+
+  const handleUpdateBudget = useCallback(async (updatedBudget) => {
+    const { data, error } = await supabase.from('budgets').update(updatedBudget).eq('id', updatedBudget.id).select();
+    if (error) {
+      console.error('Error al actualizar presupuesto:', error);
+      throw error;
+    }
+    setBudgets(prev => prev.map(b => b.id === updatedBudget.id ? data[0] : b));
+  }, []);
+
+  const handleDeleteBudget = useCallback(async (id) => {
+    const promise = supabase.from('budgets').delete().eq('id', id);
+
+    toast.promise(promise, {
+      loading: 'Eliminando presupuesto...',
+      success: () => {
+        setBudgets(prev => prev.filter(b => b.id !== id));
+        return 'Presupuesto eliminado';
+      },
+      error: 'Error al eliminar el presupuesto',
+    });
+  }, []);
 
   const openModalForEdit = useCallback((transaction) => {
       setEditingTransaction(transaction);
@@ -587,6 +636,7 @@ export default function App() {
             <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Lista</button>
             <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Calendario</button>
             <button onClick={() => setViewMode('analysis')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'analysis' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Análisis</button>
+            <button onClick={() => setViewMode('budgets')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'budgets' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Presupuestos</button>
         </div>
 
         {/* Contenido Principal */}
@@ -684,6 +734,15 @@ export default function App() {
                         )}
                     </div>
                 </>
+            )}
+
+            {viewMode === 'budgets' && (
+                <BudgetManager 
+                    budgets={budgets}
+                    onAddBudget={handleAddBudget}
+                    onUpdateBudget={handleUpdateBudget}
+                    onDeleteBudget={handleDeleteBudget}
+                />
             )}
         </main>
 
