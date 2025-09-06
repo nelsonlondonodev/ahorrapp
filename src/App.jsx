@@ -426,22 +426,35 @@ export default function App() {
   // --- Funciones CRUD para Presupuestos ---
 
   const handleAddBudget = useCallback(async (newBudget) => {
-    const { data, error } = await supabase.from('budgets').insert(newBudget).select();
+    if (!session?.user?.id) {
+      console.error('No user session found for adding budget.');
+      toast.error('No se pudo guardar el presupuesto: usuario no autenticado.');
+      return;
+    }
+    const budgetWithUserId = { ...newBudget, user_id: session.user.id };
+    const { data, error } = await supabase.from('budgets').insert(budgetWithUserId).select();
     if (error) {
       console.error('Error al añadir presupuesto:', error);
       throw error;
     }
     setBudgets(prev => [...prev, ...data]);
-  }, []);
+  }, [session]); // Add session to dependency array
 
   const handleUpdateBudget = useCallback(async (updatedBudget) => {
-    const { data, error } = await supabase.from('budgets').update(updatedBudget).eq('id', updatedBudget.id).select();
+    if (!session?.user?.id) {
+      console.error('No user session found for updating budget.');
+      toast.error('No se pudo actualizar el presupuesto: usuario no autenticado.');
+      return;
+    }
+    // Ensure user_id is part of the update payload, matching the session user_id
+    const budgetWithUserId = { ...updatedBudget, user_id: session.user.id };
+    const { data, error } = await supabase.from('budgets').update(budgetWithUserId).eq('id', updatedBudget.id).select();
     if (error) {
       console.error('Error al actualizar presupuesto:', error);
       throw error;
     }
     setBudgets(prev => prev.map(b => b.id === updatedBudget.id ? data[0] : b));
-  }, []);
+  }, [session]); // Add session to dependency array
 
   const handleDeleteBudget = useCallback(async (id) => {
     const promise = supabase.from('budgets').delete().eq('id', id);
