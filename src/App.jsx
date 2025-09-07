@@ -7,6 +7,8 @@ import BudgetManager from './components/BudgetManager';
 import MfaSetup from './components/MfaSetup';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
+import { useAuth } from './hooks/useAuth';
+import { useTransactions } from './hooks/useTransactions';
 
 // --- ICONOS SVG (Componentes) ---
 // Usamos componentes de React para los iconos SVG para mantener el código limpio.
@@ -462,8 +464,20 @@ function Auth({ supabase }) {
 
 // --- Componente Principal de la Aplicación ---
 export default function App() {
-  const [session, setSession] = useState(null);
-  const [transactions, setTransactions] = useState([]);
+  const { session, loading: authLoading, showPasswordReset, setShowPasswordReset } = useAuth();
+  const {
+    paginatedTransactions: transactions, // Renombrar para mantener consistencia
+    sortedTransactions, // Para el calendario
+    loading: transactionsLoading,
+    summary,
+    expensesByCategory,
+    monthlyFinancialData,
+    filterControls,
+    paginationControls,
+    saveTransaction,
+    deleteTransaction,
+  } = useTransactions(session);
+
   const [budgets, setBudgets] = useState([]); // New state for budgets
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -482,92 +496,8 @@ export default function App() {
   }, [session]); // Re-fetch if session changes
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
-  const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
-  const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'income', or 'expense'
-  const [sortKey, setSortKey] = useState('date');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setShowPasswordReset(true);
-      }
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Cargar transacciones iniciales
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!session) return; // No hacer nada si no hay sesión
-      const { data, error } = await supabase.from('transactions').select('*');
-      if (error) {
-        console.error('Error al obtener transacciones:', error);
-      } else {
-        setTransactions(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      }
-    };
-    fetchTransactions();
-  }, [session]); // Volver a ejecutar si la sesión cambia
-
-  // Resetear paginación cuando cambian los filtros
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [typeFilter, selectedDate, sortKey, sortOrder]);
-
-
-  // --- Funciones CRUD ---
-
-  const handleAddTransaction = useCallback(async (newTransaction) => {
-    const { data, error } = await supabase.from('transactions').insert(newTransaction).select();
-    if (error) {
-        console.error('Error al añadir transacción:', error);
-        throw error;
-    }
-    setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
-
-  const handleUpdateTransaction = useCallback(async (updatedTransaction) => {
-    const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select();
-    if (error) {
-        console.error('Error al actualizar transacción:', error);
-        throw error;
-    }
-    setTransactions(prev => prev.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
-
-  const handleDeleteTransaction = useCallback(async (id) => {
-    const promise = supabase.from('transactions').delete().eq('id', id);
-
-    toast.promise(promise, {
-        loading: 'Eliminando...',
-        success: () => {
-            setTransactions(prev => prev.filter(t => t.id !== id));
-            return 'Transacción eliminada';
-        },
-        error: 'Error al eliminar la transacción',
-    });
-  }, []);
-
-  const handleSaveTransaction = useCallback(async (transactionData) => {
-      const promise = transactionData.id
-          ? handleUpdateTransaction(transactionData)
-          : handleAddTransaction(transactionData);
-      
-      toast.promise(promise, {
-          loading: 'Guardando...',
-          success: 'Transacción guardada',
-          error: 'Error al guardar la transacción',
-      });
-  }, [handleAddTransaction, handleUpdateTransaction]);
+  
 
   // --- Funciones CRUD para Presupuestos ---
 
@@ -626,126 +556,16 @@ export default function App() {
   }
 
   const handleDateClick = (date) => {
-      setSelectedDate(date);
+      filterControls.setSelectedDate(date);
       setViewMode('list');
   }
 
   // Cálculos para el resumen
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const { totalIncome, totalExpense, balance } = summary;
+
   
-  const totalExpense = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
 
-  const balance = totalIncome - totalExpense;
-
-  const expensesByCategory = useMemo(() => {
-    const categoryMap = {};
-    transactions.filter(t => t.type === 'expense').forEach(t => {
-      categoryMap[t.category] = (categoryMap[t.category] || 0) + t.amount;
-    });
-    return Object.keys(categoryMap).map(category => ({
-      category,
-      total: categoryMap[category],
-    }));
-  }, [transactions]);
-
-  const monthlyFinancialData = useMemo(() => {
-    const dataMap = new Map(); // Key: "YYYY-MM", Value: { income: 0, expense: 0 }
-
-    transactions.forEach(t => {
-      const date = new Date(t.date + 'T00:00:00'); // Ensure date is parsed correctly
-      const year = date.getFullYear();
-      const month = date.getMonth(); // 0-indexed
-
-      const monthYearKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-
-      if (!dataMap.has(monthYearKey)) {
-        dataMap.set(monthYearKey, { income: 0, expense: 0 });
-      }
-
-      const currentMonthData = dataMap.get(monthYearKey);
-      if (t.type === 'income') {
-        currentMonthData.income += t.amount;
-      } else {
-        currentMonthData.expense += t.amount;
-      }
-    });
-
-    // Sort keys chronologically
-    const sortedKeys = Array.from(dataMap.keys()).sort();
-
-    const labels = sortedKeys.map(key => {
-      const [year, month] = key.split('-');
-      const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleString('es-ES', { month: 'short' });
-      return `${monthName}. ${year}`;
-    });
-
-    const incomeData = sortedKeys.map(key => dataMap.get(key).income);
-    const expenseData = sortedKeys.map(key => dataMap.get(key).expense);
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Ingresos',
-          data: incomeData,
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.5)',
-          tension: 0.1,
-        },
-        {
-          label: 'Gastos',
-          data: expenseData,
-          borderColor: 'rgb(255, 99, 132)',
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
-          tension: 0.1,
-        },
-      ],
-    };
-  }, [transactions]);
-
-  const filteredTransactions = transactions
-    .filter(t => {
-        if (selectedDate) {
-            return t.date === selectedDate;
-        }
-        return true;
-    })
-    .filter(t => {
-        if (typeFilter === 'all') {
-            return true;
-        }
-        return t.type === typeFilter;
-    });
-
-  const sortedAndFilteredTransactions = [...filteredTransactions].sort((a, b) => {
-    let valA = a[sortKey];
-    let valB = b[sortKey];
-
-    if (sortKey === 'date') {
-        valA = new Date(valA).getTime();
-        valB = new Date(valB).getTime();
-    }
-
-    if (valA < valB) {
-        return sortOrder === 'asc' ? -1 : 1;
-    }
-    if (valA > valB) {
-        return sortOrder === 'asc' ? 1 : -1;
-    }
-    return 0;
-  });
-
-  // --- Lógica de Paginación ---
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(sortedAndFilteredTransactions.length / itemsPerPage);
-  const paginatedTransactions = sortedAndFilteredTransactions.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  
 
   return (
     <>
@@ -807,9 +627,9 @@ export default function App() {
                     <div>
                         {/* Filtros de tipo */}
                         <div className="flex justify-center space-x-2 mb-6 bg-slate-800 p-1 rounded-lg">
-                            <button onClick={() => setTypeFilter('all')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'all' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
-                            <button onClick={() => setTypeFilter('income')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'income' ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
-                            <button onClick={() => setTypeFilter('expense')} className={`w-full py-2 rounded-md font-bold transition-colors ${typeFilter === 'expense' ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
+                            <button onClick={() => filterControls.setTypeFilter('all')} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === 'all' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
+                            <button onClick={() => filterControls.setTypeFilter('income')} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === 'income' ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
+                            <button onClick={() => filterControls.setTypeFilter('expense')} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === 'expense' ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
                         </div>
 
                         {/* Controles de Ordenación */}
@@ -817,10 +637,10 @@ export default function App() {
                             <select 
                                 onChange={(e) => {
                                     const [key, order] = e.target.value.split('-');
-                                    setSortKey(key);
-                                    setSortOrder(order);
+                                    filterControls.setSortKey(key);
+                                    filterControls.setSortOrder(order);
                                 }}
-                                value={`${sortKey}-${sortOrder}`}
+                                value={`${filterControls.sortKey}-${filterControls.sortOrder}`}
                                 className="bg-slate-800 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                             >
                                 <option value="date-desc">Fecha (Más reciente)</option>
@@ -834,37 +654,37 @@ export default function App() {
 
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-2xl font-bold text-white">
-                                {selectedDate 
-                                    ? `Transacciones del ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' })}`
+                                {filterControls.selectedDate 
+                                    ? `Transacciones del ${new Date(filterControls.selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' })}`
                                     : 'Transacciones Recientes'}
                           </h2>
-                          {selectedDate && (
-                              <button onClick={() => setSelectedDate(null)} className="text-sky-400 hover:text-sky-300 font-bold">
+                          {filterControls.selectedDate && (
+                              <button onClick={() => filterControls.setSelectedDate(null)} className="text-sky-400 hover:text-sky-300 font-bold">
                                   Mostrar todas
                               </button>
                           )}
                       </div>
                       <ul>
-                          {paginatedTransactions.length > 0 
-                              ? paginatedTransactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={handleDeleteTransaction} />)
+                          {transactions.length > 0 
+                              ? transactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={deleteTransaction} />)
                               : <p className="text-slate-500 text-center py-8">No hay transacciones que coincidan con los filtros seleccionados.</p>
                           }
                       </ul>
 
                       {/* Controles de Paginación */}
-                      {totalPages > 1 && (
+                      {paginationControls.totalPages > 1 && (
                           <div className="flex justify-center items-center space-x-4 mt-6">
                               <button 
-                                  onClick={() => setCurrentPage(p => p - 1)} 
-                                  disabled={currentPage === 1}
+                                  onClick={() => paginationControls.setCurrentPage(p => p - 1)} 
+                                  disabled={paginationControls.currentPage === 1}
                                   className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                   Anterior
                               </button>
-                              <span className="text-slate-400">Página {currentPage} de {totalPages}</span>
+                              <span className="text-slate-400">Página {paginationControls.currentPage} de {paginationControls.totalPages}</span>
                               <button 
-                                  onClick={() => setCurrentPage(p => p + 1)} 
-                                  disabled={currentPage === totalPages}
+                                  onClick={() => paginationControls.setCurrentPage(p => p + 1)} 
+                                  disabled={paginationControls.currentPage === paginationControls.totalPages}
                                   className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                   Siguiente
@@ -875,7 +695,7 @@ export default function App() {
               )}
 
               {viewMode === 'calendar' && (
-                  <CalendarView transactions={transactions} onDateClick={handleDateClick} />
+                  <CalendarView transactions={sortedTransactions} onDateClick={handleDateClick} />
               )}
 
               {viewMode === 'analysis' && (
@@ -925,9 +745,9 @@ export default function App() {
           {/* Modal */}
           {isModalOpen && <AddTransactionModal 
               onClose={closeModal}
-              onSave={handleSaveTransaction}
+              onSave={saveTransaction}
               transactionToEdit={editingTransaction}
-              selectedDate={selectedDate}
+              selectedDate={filterControls.selectedDate}
           />}
 
         </div>

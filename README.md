@@ -1,118 +1,115 @@
-# React + Vite
+# Ahorrapp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ahorrapp es una aplicación web de gestión de finanzas personales diseñada para ayudarte a seguir tus ingresos y gastos de una manera sencilla e intuitiva.
 
-Currently, two official plugins are available:
+## ✨ Características Actuales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+*   **Autenticación de Usuarios:** Sistema de inicio de sesión seguro con múltiples métodos:
+    *   Correo y contraseña.
+    *   Inicio de sesión con Google (OAuth).
+    *   Enlaces mágicos sin contraseña.
+    *   Recuperación de contraseña.
+*   **Gestión de Transacciones (CRUD):** Añade, visualiza, edita y elimina tus ingresos y gastos.
+*   **Escaneo de Recibos (OCR):** Sube una foto de un recibo y la aplicación extraerá automáticamente la descripción y el importe usando Tesseract.js.
+*   **Visualización de Datos:**
+    *   **Dashboard Principal:** Resumen de ingresos, gastos y balance total.
+    *   **Gráficos Analíticos:** Gráfico de pastel para ver gastos por categoría y un gráfico de líneas para comparar ingresos vs. gastos a lo largo del tiempo.
+    *   **Vista de Calendario:** Visualiza tus transacciones en un calendario interactivo.
+*   **Filtrado y Paginación:** Filtra transacciones por tipo (ingreso/gasto) y fecha. La lista de transacciones está paginada para un rendimiento óptimo.
+*   **Gestión de Presupuestos:** Crea, actualiza y elimina presupuestos para diferentes categorías.
+*   **Seguridad:** Opción para configurar Autenticación de Múltiples Factores (MFA) para mayor seguridad de la cuenta.
 
-## Expanding the ESLint configuration
+## 🛠️ Tecnologías Utilizadas
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+*   **Frontend:** [React](https://reactjs.org/) + [Vite](https://vitejs.dev/)
+*   **Backend y Base de Datos:** [Supabase](https://supabase.io/)
+*   **Estilos:** [Tailwind CSS](https://tailwindcss.com/)
+*   **Gráficos:** [Chart.js](https://www.chartjs.org/)
+*   **Notificaciones:** [React Hot Toast](https://react-hot-toast.com/)
+*   **Componente de Calendario:** [React-Calendar](https://github.com/wojtekmaj/react-calendar)
 
-## Sugerencias de Mejora para Ahorrapp
+## 🚀 Cómo Empezar
 
-Aquí se detallan las sugerencias de mejora para la aplicación web Ahorrapp, ordenadas por impacto y complejidad.
+Sigue estos pasos para configurar una copia del proyecto localmente.
 
-### 1. Integración con un Backend Real (Ej. Supabase)
+### Prerrequisitos
 
-**Importancia:** Crítica para la funcionalidad de una aplicación real.
-**Descripción:** Reemplazar el mock de Supabase basado en `localStorage` por una conexión a un backend real. Esto permitirá:
-*   **Persistencia de Datos:** Los datos no se perderán al cerrar el navegador o cambiar de dispositivo.
-*   **Soporte Multi-usuario:** Autenticación y gestión de cuentas de usuario.
-*   **Escalabilidad:** Manejo eficiente de grandes volúmenes de datos y consultas complejas.
-*   **Seguridad:** Almacenamiento seguro de datos sensibles en el servidor.
+*   Node.js (v18 o superior)
+*   npm
+*   Una cuenta gratuita en [Supabase](https://supabase.com/)
 
-**Pasos Implicados:**
-1.  **Configuración del Proyecto Supabase:** Crear un proyecto en la plataforma Supabase, definir la tabla `transactions` con las columnas necesarias (incluyendo `user_id`), y configurar políticas de Row Level Security (RLS).
-2.  **Instalación y Configuración del Cliente Supabase:** Instalar `@supabase/supabase-js` e inicializar el cliente con las credenciales del proyecto (URL y clave anónima, almacenadas en variables de entorno).
-3.  **Implementación de Autenticación:** Añadir funcionalidades de registro e inicio de sesión de usuarios, y gestionar las sesiones.
-4.  **Actualización de Operaciones CRUD:** Modificar las funciones `fetchTransactions`, `handleAddTransaction`, `handleUpdateTransaction` y `handleDeleteTransaction` en `src/App.jsx` para interactuar con el cliente real de Supabase, asegurando que las transacciones se asocien al usuario autenticado.
+### Instalación
 
-### 2. Manejo de Errores y Feedback al Usuario
+1.  **Clona el repositorio:**
+    ```sh
+    git clone https://github.com/tu-usuario/ahorrapp.git
+    cd ahorrapp
+    ```
 
-**Importancia:** Alta, mejora la experiencia del usuario y la depuración.
-**Descripción:** Implementar un sistema robusto de manejo de errores y notificaciones visuales para el usuario.
-**Ejemplos:**
-*   Mensajes de error claros y amigables en la UI para fallos en operaciones de red o OCR.
-*   Notificaciones "toast" para confirmar acciones exitosas (ej. "Transacción guardada").
-*   Indicadores de carga para operaciones asíncronas (ej. "Escaneando recibo...", "Guardando...").
+2.  **Instala las dependencias:**
+    ```sh
+    npm install
+    ```
 
-### 3. Validación de Entradas
+3.  **Configura las variables de entorno:**
+    *   Crea un archivo `.env` en la raíz del proyecto.
+    *   Inicia sesión en tu cuenta de Supabase y crea un nuevo proyecto.
+    *   Ve a `Project Settings` > `API`.
+    *   Copia la URL del proyecto y la clave `anon (public)` en tu archivo `.env`:
 
-**Importancia:** Alta, asegura la integridad de los datos.
-**Descripción:** Implementar validación de datos en el formulario de transacciones.
-**Ejemplos:**
-*   Asegurar que la cantidad sea un número válido y positivo.
-*   Asegurar que la descripción no esté vacía.
-*   Validación de formato de fecha.
-*   (Si se implementa un backend real) Implementar validación también en el lado del servidor.
+    ```env
+    VITE_SUPABASE_URL=TU_URL_DE_SUPABASE
+    VITE_SUPABASE_ANON_KEY=TU_CLAVE_ANON_PUBLICA
+    ```
 
-### 4. Accesibilidad (A11y)
+4.  **Configura la base de datos en Supabase:**
+    *   En el `SQL Editor` de Supabase, ejecuta el siguiente script para crear las tablas `transactions` y `budgets` y habilitar Row Level Security (RLS):
+    
+    ```sql
+    -- Crear tabla de transacciones
+    CREATE TABLE transactions (
+      id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+      user_id uuid REFERENCES auth.users NOT NULL,
+      created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+      description text,
+      amount numeric,
+      category text,
+      type text, -- 'income' or 'expense'
+      date date
+    );
 
-**Importancia:** Media, mejora la usabilidad para todos los usuarios.
-**Descripción:** Revisar y mejorar la accesibilidad de la aplicación.
-**Ejemplos:**
-*   Uso adecuado de atributos ARIA para elementos interactivos y modales.
-*   Navegación por teclado para todos los controles.
-*   Gestión de foco en modales y formularios.
-*   Contraste de colores suficiente.
+    -- Crear tabla de presupuestos
+    CREATE TABLE budgets (
+      id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+      user_id uuid REFERENCES auth.users NOT NULL,
+      created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+      category text UNIQUE,
+      amount numeric
+    );
 
-### 5. Optimización de Rendimiento
+    -- Habilitar Row Level Security
+    ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
-**Importancia:** Media, mejora la fluidez de la aplicación.
-**Descripción:** Optimizar el rendimiento, especialmente en áreas críticas como el OCR.
-**Ejemplos:**
-*   **OCR Processing:**
-    *   Preprocesamiento de imágenes (redimensionar, recortar) antes de enviarlas a Tesseract.js.
-    *   Uso de Web Workers para ejecutar el OCR en un hilo de fondo y evitar bloquear la UI.
-    *   Considerar la posibilidad de descargar el OCR a una función serverless si el rendimiento en el cliente es insuficiente.
-*   **React Performance:**
-    *   Uso de `React.memo`, `useCallback`, `useMemo` para evitar re-renders innecesarios de componentes.
+    -- Políticas para que los usuarios solo vean y gestionen sus propios datos
+    CREATE POLICY "Los usuarios pueden gestionar sus propias transacciones" ON transactions
+      FOR ALL USING (auth.uid() = user_id);
 
-### 6. Filtrado, Ordenación y Paginación de Transacciones
+    CREATE POLICY "Los usuarios pueden gestionar sus propios presupuestos" ON budgets
+      FOR ALL USING (auth.uid() = user_id);
+    ```
 
-**Importancia:** Media, mejora la gestión de grandes volúmenes de datos.
-**Descripción:** Añadir funcionalidades avanzadas para explorar las transacciones.
-**Ejemplos:**
-*   Filtros por categoría, tipo (ingreso/gasto), rango de fechas.
-*   Opciones de ordenación por fecha, cantidad, descripción.
-*   Paginación o "infinite scroll" para cargar transacciones de forma eficiente.
+5.  **Inicia el servidor de desarrollo:**
+    ```sh
+    npm run dev
+    ```
 
-### 7. Reporting y Análisis
+¡Abre [http://localhost:5173](http://localhost:5173) en tu navegador para ver la aplicación en funcionamiento!
 
-**Importancia:** Media, añade valor analítico a la aplicación.
-**Descripción:** Proporcionar visualizaciones y herramientas para analizar los hábitos financieros.
-**Ejemplos:**
-*   Gráficos de gastos por categoría (ej. gráfico de pastel).
-*   Gráficos de ingresos vs. gastos a lo largo del tiempo (ej. gráfico de barras/líneas).
-*   Funcionalidad de presupuestación para establecer límites de gasto por categoría.
+## 📜 Scripts Disponibles
 
-### 8. Gestión de Categorías
-
-**Importancia:** Baja, mejora la personalización.
-**Descripción:** Permitir a los usuarios añadir, editar y eliminar sus propias categorías de transacciones.
-
-### 9. Soporte Multi-moneda
-
-**Importancia:** Baja (depende del público objetivo).
-**Descripción:** Si la aplicación está destinada a usuarios internacionales, permitir el registro de transacciones en diferentes monedas y la conversión.
-
-### 10. Refinamientos de UI/UX
-
-**Importancia:** Baja, mejora la estética y la sensación general.
-**Descripción:** Pequeñas mejoras en la interfaz de usuario y la experiencia.
-**Ejemplos:**
-*   Animaciones sutiles para modales y transiciones de elementos de lista.
-*   Implementación de un selector de tema (modo oscuro/claro).
-*   Asegurar una experiencia óptima en una gama más amplia de dispositivos y tamaños de pantalla.
-
-### 11. Mejora de Precisión y Extracción OCR
-
-**Importancia:** Media, mejora la característica clave de OCR.
-**Descripción:** Refinar la lógica de extracción de datos de los recibos.
-**Ejemplos:**
-*   Expresiones regulares más robustas para extraer importes, fechas y descripciones de diversos formatos de recibo.
-*   Intentar extraer el nombre del comercio/proveedor.
-*   Proporcionar una interfaz fácil para que el usuario corrija rápidamente los errores de OCR.
+*   `npm run dev`: Inicia el servidor de desarrollo.
+*   `npm run build`: Compila la aplicación para producción.
+*   `npm run lint`: Ejecuta el linter de ESLint.
+*   `npm run preview`: Sirve la build de producción localmente.
+*   `npm run deploy`: Despliega la aplicación en GitHub Pages.
