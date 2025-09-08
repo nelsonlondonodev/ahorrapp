@@ -9,6 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
+import Tesseract from 'tesseract.js';
 
 // --- ICONOS SVG (Componentes) ---
 // Usamos componentes de React para los iconos SVG para mantener el código limpio.
