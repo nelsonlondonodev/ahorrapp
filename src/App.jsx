@@ -10,290 +10,29 @@ import { supabase } from './supabaseClient';
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
 import AddTransactionModal from './components/AddTransactionModal';
-
-// --- ICONOS SVG (Componentes) ---
-// Usamos componentes de React para los iconos SVG para mantener el código limpio.
-const PlusIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-  </svg>
-);
+import { PlusIcon, ArrowUpIcon, ArrowDownIcon, TrashIcon, EditIcon } from './components/Icons';
+import SummaryCard from './components/SummaryCard';
+import TransactionItem from './components/TransactionItem';
+import ResetPasswordModal from './components/ResetPasswordModal';
+import Auth from './components/Auth';
 
 
-
-const ArrowUpIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-    </svg>
-);
-
-const ArrowDownIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-    </svg>
-);
-
-const TrashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-);
-
-const EditIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z" />
-  </svg>
-);
 
 
 
 
 // --- Componentes de la UI ---
 
-// Tarjeta para mostrar resúmenes (Ingresos, Gastos, Balance)
-function SummaryCard({ title, amount, children, colorClass }) {
-  return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg flex-1">
-      <div className="flex items-center space-x-4">
-        <div className={`p-3 rounded-full ${colorClass}`}>
-          {children}
-        </div>
-        <div>
-          <p className="text-slate-400 text-sm font-medium">{title}</p>
-          <p className="text-white text-2xl font-bold">
-            {amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Elemento individual de la lista de transacciones
-const TransactionItem = memo(function TransactionItem({ transaction, onEdit, onDelete }) {
-    const { description, category, amount, type, date } = transaction;
-    const isExpense = type === 'expense';
-    const formattedAmount = (isExpense ? -amount : amount).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-    const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', timeZone: 'Europe/Madrid' });
-
-    return (
-        <li className="flex items-center justify-between p-4 bg-slate-800 rounded-lg mb-3">
-            <div className="flex items-center space-x-4">
-                 <div className={`p-2 rounded-full ${isExpense ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
-                    {isExpense ? <ArrowDownIcon /> : <ArrowUpIcon />}
-                </div>
-                <div>
-                    <p className="text-white font-semibold">{description}</p>
-                    <p className="text-slate-400 text-sm">{category} - {formattedDate}</p>
-                </div>
-            </div>
-            <div className="flex items-center space-x-2">
-                <p className={`font-bold ${isExpense ? 'text-red-400' : 'text-green-400'}`}>
-                    {formattedAmount}
-                </p>
-                <button onClick={() => onEdit(transaction)} className="text-slate-500 hover:text-white p-2 rounded-full hover:bg-slate-700">
-                    <EditIcon />
-                </button>
-                <button onClick={() => onDelete(transaction.id)} className="text-slate-500 hover:text-white p-2 rounded-full hover:bg-slate-700">
-                    <TrashIcon />
-                </button>
-            </div>
-        </li>
-    );
-});
 
 
 
-// --- Componente para Restablecer Contraseña ---
-function ResetPasswordModal({ supabase, onClose }) {
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const handlePasswordReset = async (e) => {
-        e.preventDefault();
-        if (password.length < 6) {
-            toast.error('La contraseña debe tener al menos 6 caracteres.');
-            return;
-        }
-        setLoading(true);
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) {
-            toast.error(error.error_description || error.message);
-        } else {
-            toast.success('¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.');
-            onClose();
-        }
-        setLoading(false);
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-                <h2 className="text-white text-2xl font-bold mb-6">Crea tu nueva contraseña</h2>
-                <form onSubmit={handlePasswordReset}>
-                    <div className="mb-6">
-                        <label htmlFor="new-password" className="block text-slate-400 text-sm font-bold mb-2">Nueva Contraseña</label>
-                        <input
-                            id="new-password"
-                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="mt-6">
-                        <button 
-                            type="submit"
-                            className="w-full bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50"
-                            disabled={loading}
-                        >
-                            {loading ? <span>Guardando...</span> : <span>Guardar Contraseña</span>}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-}
 
 
-// --- Componente de Autenticación ---
-function Auth({ supabase }) {
-    const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
 
-    const handleMagicLinkLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        const { error } = await supabase.auth.signInWithOtp({ email });
-        if (error) {
-            toast.error(error.error_description || error.message);
-        } else {
-            toast.success('¡Revisa tu correo para el enlace de inicio de sesión!');
-        }
-        setLoading(false);
-    };
 
-    const handlePasswordLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            toast.error(error.error_description || error.message);
-        }
-        // No success message needed, the component will just re-render
-        setLoading(false);
-    };
 
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.origin, // Redirects back to the current page
-            },
-        });
-        if (error) {
-            alert(error.error_description || error.message);
-        }
-        setLoading(false);
-    };
 
-    const handlePasswordReset = async () => {
-        if (!email) {
-            toast.error('Por favor, introduce tu email para restablecer la contraseña.');
-            return;
-        }
-        setLoading(true);
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin,
-        });
-        if (error) {
-            toast.error(error.error_description || error.message);
-        } else {
-            toast.success('¡Revisa tu correo para restablecer tu contraseña!');
-        }
-        setLoading(false);
-    };
 
-    return (
-        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
-            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-                <h1 className="text-3xl font-bold text-white text-center mb-2">Ahorrapp</h1>
-                <p className="text-slate-400 text-center mb-8">Inicia sesión o crea una cuenta</p>
-                <form onSubmit={handlePasswordLogin}>
-                    <div className="mb-4">
-                        <label htmlFor="email" className="block text-slate-400 text-sm font-bold mb-2">Correo Electrónico</label>
-                        <input
-                            id="email"
-                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                            type="email"
-                            placeholder="tu@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="mb-6">
-                        <label htmlFor="password" className="block text-slate-400 text-sm font-bold mb-2">Contraseña</label>
-                        <input
-                            id="password"
-                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <div className="text-right mt-2">
-                            <button
-                                type="button"
-                                onClick={handlePasswordReset}
-                                className="text-sm text-sky-400 hover:text-sky-300 font-medium"
-                            >
-                                ¿Has olvidado tu contraseña?
-                            </button>
-                        </div>
-                    </div>
-                    <div className="mt-6 space-y-4">
-                        <button 
-                            type="submit"
-                            className="w-full bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50"
-                            disabled={loading}
-                        >
-                            {loading ? <span>Iniciando...</span> : <span>Iniciar Sesión</span>}
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={handleMagicLinkLogin}
-                            className="w-full bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors shadow-lg shadow-slate-600/20 disabled:opacity-50"
-                            disabled={loading}
-                        >
-                            {loading ? <span>Enviando...</span> : <span>Enviar enlace mágico</span>}
-                        </button>
-                    </div>
-                </form>
-
-                <div className="relative flex py-5 items-center">
-                    <div className="flex-grow border-t border-slate-600"></div>
-                    <span className="flex-shrink mx-4 text-slate-400">O</span>
-                    <div className="flex-grow border-t border-slate-600"></div>
-                </div>
-
-                <button
-                    onClick={handleGoogleLogin}
-                    className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
-                    disabled={loading}
-                >
-                    Iniciar sesión con Google
-                </button>
-            </div>
-        </div>
-    );
-}
 
 
 // --- Componente Principal de la Aplicación ---
