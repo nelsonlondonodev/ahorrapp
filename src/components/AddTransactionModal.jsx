@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import Tesseract from 'tesseract.js';
+import { CATEGORIES, TRANSACTION_TYPES } from '../constants';
 
 // El icono UploadIcon se usa solo en este componente, así que lo definimos aquí.
 const UploadIcon = () => (
@@ -13,8 +14,8 @@ const UploadIcon = () => (
 export default function AddTransactionModal({ onClose, onSave, transactionToEdit, selectedDate }) {
     const [description, setDescription] = useState(transactionToEdit?.description || '');
     const [amount, setAmount] = useState(transactionToEdit?.amount || '');
-    const [category, setCategory] = useState(transactionToEdit?.category || 'Comida');
-    const [type, setType] = useState(transactionToEdit?.type || 'expense');
+    const [category, setCategory] = useState(transactionToEdit?.category || CATEGORIES[0]);
+    const [type, setType] = useState(transactionToEdit?.type || TRANSACTION_TYPES.EXPENSE);
     const [date, setDate] = useState(transactionToEdit?.date || selectedDate || new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -68,7 +69,7 @@ export default function AddTransactionModal({ onClose, onSave, transactionToEdit
             // Actualiza el estado del formulario con los datos extraídos.
             if(extractedAmount) setAmount(extractedAmount);
             if(extractedDescription) setDescription(extractedDescription);
-            setType('expense'); // Asume que los recibos son siempre gastos.
+            setType(TRANSACTION_TYPES.EXPENSE); // Asume que los recibos son siempre gastos.
 
         } catch (error) {
             console.error('Error durante el OCR:', error);
@@ -145,20 +146,17 @@ export default function AddTransactionModal({ onClose, onSave, transactionToEdit
                         <div className="flex-1">
                              <label className="block text-slate-400 text-sm font-bold mb-2">Tipo</label>
                              <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-                                <option value="expense">Gasto</option>
-                                <option value="income">Ingreso</option>
+                                <option value={TRANSACTION_TYPES.EXPENSE}>Gasto</option>
+                                <option value={TRANSACTION_TYPES.INCOME}>Ingreso</option>
                              </select>
                         </div>
                     </div>
                      <div className="mb-4">
                         <label className="block text-slate-400 text-sm font-bold mb-2">Categoría</label>
                         <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-                           <option>Comida</option>
-                           <option>Vivienda</option>
-                           <option>Transporte</option>
-                           <option>Ocio</option>
-                           <option>Salario</option>
-                           <option>Otros</option>
+                           {CATEGORIES.map((cat) => (
+                             <option key={cat} value={cat}>{cat}</option>
+                           ))}
                         </select>
                     </div>
                     <div className="mb-6">

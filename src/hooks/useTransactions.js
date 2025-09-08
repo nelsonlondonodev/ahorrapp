@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
+import { TRANSACTION_TYPES } from '../constants';
 
 // Hook para gestionar toda la lógica de transacciones
 export function useTransactions(session) {
@@ -9,7 +10,7 @@ export function useTransactions(session) {
   const [loading, setLoading] = useState(true);
 
   // --- ESTADO DE FILTRADO Y ORDENACIÓN ---
-  const [typeFilter, setTypeFilter] = useState('all'); // 'all', 'income', 'expense'
+  const [typeFilter, setTypeFilter] = useState(TRANSACTION_TYPES.ALL); // 'all', 'income', 'expense'
   const [sortKey, setSortKey] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
@@ -91,7 +92,7 @@ export function useTransactions(session) {
   const filteredTransactions = useMemo(() => {
     return transactions
       .filter(t => !selectedDate || t.date === selectedDate)
-      .filter(t => typeFilter === 'all' || t.type === typeFilter);
+      .filter(t => typeFilter === TRANSACTION_TYPES.ALL || t.type === typeFilter);
   }, [transactions, selectedDate, typeFilter]);
 
   // 2. Ordenar transacciones
@@ -124,11 +125,11 @@ export function useTransactions(session) {
   // 4. Cálculos para el resumen (Dashboard)
   const summary = useMemo(() => {
     const totalIncome = transactions
-      .filter(t => t.type === 'income')
+      .filter(t => t.type === TRANSACTION_TYPES.INCOME)
       .reduce((sum, t) => sum + t.amount, 0);
     
     const totalExpense = transactions
-      .filter(t => t.type === 'expense')
+      .filter(t => t.type === TRANSACTION_TYPES.EXPENSE)
       .reduce((sum, t) => sum + t.amount, 0);
 
     const balance = totalIncome - totalExpense;
@@ -139,7 +140,7 @@ export function useTransactions(session) {
   // 5. Datos para gráficos
   const expensesByCategory = useMemo(() => {
     const categoryMap = {};
-    transactions.filter(t => t.type === 'expense').forEach(t => {
+    transactions.filter(t => t.type === TRANSACTION_TYPES.EXPENSE).forEach(t => {
       categoryMap[t.category] = (categoryMap[t.category] || 0) + t.amount;
     });
     return Object.keys(categoryMap).map(category => ({
@@ -156,9 +157,9 @@ export function useTransactions(session) {
         dataMap.set(monthYearKey, { income: 0, expense: 0 });
       }
       const currentMonthData = dataMap.get(monthYearKey);
-      if (t.type === 'income') {
+      if (t.type === TRANSACTION_TYPES.INCOME) {
         currentMonthData.income += t.amount;
-      } else {
+      } else if (t.type === TRANSACTION_TYPES.EXPENSE) {
         currentMonthData.expense += t.amount;
       }
     });

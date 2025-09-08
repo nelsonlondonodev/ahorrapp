@@ -15,6 +15,7 @@ import SummaryCard from './components/SummaryCard';
 import TransactionItem from './components/TransactionItem';
 import ResetPasswordModal from './components/ResetPasswordModal';
 import Auth from './components/Auth';
+import { VIEW_MODES, TRANSACTION_TYPES } from './constants';
 
 
 
@@ -68,7 +69,7 @@ export default function App() {
     fetchBudgets();
   }, [session]); // Re-fetch if session changes
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [viewMode, setViewMode] = useState('calendar'); // 'list' or 'calendar'
+  const [viewMode, setViewMode] = useState(VIEW_MODES.CALENDAR); // 'list' or 'calendar'
 
   
 
@@ -130,7 +131,7 @@ export default function App() {
 
   const handleDateClick = (date) => {
       filterControls.setSelectedDate(date);
-      setViewMode('list');
+      setViewMode(VIEW_MODES.LIST);
   }
 
   // Cálculos para el resumen
@@ -187,22 +188,22 @@ export default function App() {
 
             {/* Selector de Vista */}
             <div className="mb-6 flex justify-center bg-slate-800 rounded-lg p-1">
-                <button onClick={() => setViewMode('list')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'list' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Lista</button>
-                <button onClick={() => setViewMode('calendar')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'calendar' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Calendario</button>
-                <button onClick={() => setViewMode('analysis')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'analysis' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Análisis</button>
-                <button onClick={() => setViewMode('budgets')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'budgets' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Presupuestos</button>
-                <button onClick={() => setViewMode('security')} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === 'security' ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Seguridad</button>
+                <button onClick={() => setViewMode(VIEW_MODES.LIST)} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === VIEW_MODES.LIST ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Lista</button>
+                <button onClick={() => setViewMode(VIEW_MODES.CALENDAR)} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === VIEW_MODES.CALENDAR ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Calendario</button>
+                <button onClick={() => setViewMode(VIEW_MODES.ANALYSIS)} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === VIEW_MODES.ANALYSIS ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Análisis</button>
+                <button onClick={() => setViewMode(VIEW_MODES.BUDGETS)} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === VIEW_MODES.BUDGETS ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Presupuestos</button>
+                <button onClick={() => setViewMode(VIEW_MODES.SECURITY)} className={`w-full py-2 rounded-md font-bold transition-colors ${viewMode === VIEW_MODES.SECURITY ? 'bg-sky-600 hover:bg-sky-700 hover:text-sky-200' : 'hover:bg-slate-700 hover:text-sky-400'}`}>Seguridad</button>
             </div>
 
             {/* Contenido Principal */}
             <main>
-                {viewMode === 'list' && (
+                {viewMode === VIEW_MODES.LIST && (
                     <div>
                         {/* Filtros de tipo */}
                         <div className="flex justify-center space-x-2 mb-6 bg-slate-800 p-1 rounded-lg">
-                            <button onClick={() => filterControls.setTypeFilter('all')} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === 'all' ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
-                            <button onClick={() => filterControls.setTypeFilter('income')} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === 'income' ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
-                            <button onClick={() => filterControls.setTypeFilter('expense')} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === 'expense' ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
+                            <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.ALL)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.ALL ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
+                            <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.INCOME)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.INCOME ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
+                            <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.EXPENSE)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.EXPENSE ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
                         </div>
 
                         {/* Controles de Ordenación */}
@@ -267,11 +268,11 @@ export default function App() {
                   </div>
               )}
 
-              {viewMode === 'calendar' && (
+              {viewMode === VIEW_MODES.CALENDAR && (
                   <CalendarView transactions={sortedTransactions} onDateClick={handleDateClick} />
               )}
 
-              {viewMode === 'analysis' && (
+              {viewMode === VIEW_MODES.ANALYSIS && (
                   <>
                       <div className="bg-slate-800 p-6 rounded-2xl shadow-lg mb-8">
                           <h2 className="text-white text-2xl font-bold mb-4">Gastos por Categoría</h2>
@@ -291,7 +292,7 @@ export default function App() {
                   </>
               )}
 
-              {viewMode === 'budgets' && (
+              {viewMode === VIEW_MODES.BUDGETS && (
                   <BudgetManager 
                       budgets={budgets}
                       onAddBudget={handleAddBudget}
@@ -300,7 +301,7 @@ export default function App() {
                   />
               )}
 
-              {viewMode === 'security' && (
+              {viewMode === VIEW_MODES.SECURITY && (
                   <MfaSetup />
               )}
           </main>
