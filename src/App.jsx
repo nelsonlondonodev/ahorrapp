@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import CalendarView from './components/CalendarView';
 import CategoryChart from './components/CategoryChart';
 import MonthlyChart from './components/MonthlyChart';
@@ -15,33 +14,34 @@ import SummaryCard from './components/SummaryCard';
 import TransactionItem from './components/TransactionItem';
 import ResetPasswordModal from './components/ResetPasswordModal';
 import Auth from './components/Auth';
+import ListView from './components/ListView';
+import AnalysisView from './components/AnalysisView';
+import BudgetsView from './components/BudgetsView';
 import { VIEW_MODES, TRANSACTION_TYPES } from './constants';
 
+const getUserId = (session) => {
+  if (!session?.user?.id) {
+    console.error('No user session found.');
+    toast.error('Usuario no autenticado.');
+    return null;
+  }
+  return session.user.id;
+};
 
+const handleSupabaseError = (error, operationName) => {
+  if (error) {
+    console.error(`Error al ${operationName}:`, error);
+    toast.error(`Error al ${operationName}.`);
+    return true; // Indicates an error occurred
+  }
+  return false; // Indicates no error
+};
 
-
-
-
-// --- Componentes de la UI ---
-
-
-
-
-
-
-
-
-
-
-
-
-
-// --- Componente Principal de la Aplicación ---
 export default function App() {
   const { session, loading: authLoading, showPasswordReset, setShowPasswordReset } = useAuth();
   const {
-    paginatedTransactions: transactions, // Renombrar para mantener consistencia
-    sortedTransactions, // Para el calendario
+    paginatedTransactions: transactions,
+    sortedTransactions,
     loading: transactionsLoading,
     summary,
     expensesByCategory,
@@ -52,10 +52,9 @@ export default function App() {
     deleteTransaction,
   } = useTransactions(session);
 
-  const [budgets, setBudgets] = useState([]); // New state for budgets
+  const [budgets, setBudgets] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch budgets
   useEffect(() => {
     const fetchBudgets = async () => {
       if (!session) return;
@@ -67,7 +66,7 @@ export default function App() {
       }
     };
     fetchBudgets();
-  }, [session]); // Re-fetch if session changes
+  }, [session]);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [viewMode, setViewMode] = useState(VIEW_MODES.CALENDAR); // 'list' or 'calendar'
 
@@ -76,35 +75,28 @@ export default function App() {
   // --- Funciones CRUD para Presupuestos ---
 
   const handleAddBudget = useCallback(async (newBudget) => {
-    if (!session?.user?.id) {
-      console.error('No user session found for adding budget.');
-      toast.error('No se pudo guardar el presupuesto: usuario no autenticado.');
-      return;
-    }
-    const budgetWithUserId = { ...newBudget, user_id: session.user.id };
+    const userId = getUserId(session);
+    if (!userId) return;
+
+    const budgetWithUserId = { ...newBudget, user_id: userId };
     const { data, error } = await supabase.from('budgets').insert(budgetWithUserId).select();
-    if (error) {
-      console.error('Error al añadir presupuesto:', error);
-      throw error;
+    if (handleSupabaseError(error, 'añadir presupuesto')) {
+      return;
     }
     setBudgets(prev => [...prev, ...data]);
-  }, [session]); // Add session to dependency array
+  }, [session]);
 
   const handleUpdateBudget = useCallback(async (updatedBudget) => {
-    if (!session?.user?.id) {
-      console.error('No user session found for updating budget.');
-      toast.error('No se pudo actualizar el presupuesto: usuario no autenticado.');
+    const userId = getUserId(session);
+    if (!userId) return;
+
+    const budgetWithUserId = { ...updatedBudget, user_id: userId };
+    const { data, error } = await supabase.from('budgets').update(budgetWithUserId).eq('id', updatedBudget.id).select();
+    if (handleSupabaseError(error, 'actualizar presupuesto')) {
       return;
     }
-    // Ensure user_id is part of the update payload, matching the session user_id
-    const budgetWithUserId = { ...updatedBudget, user_id: session.user.id };
-    const { data, error } = await supabase.from('budgets').update(budgetWithUserId).eq('id', updatedBudget.id).select();
-    if (error) {
-      console.error('Error al actualizar presupuesto:', error);
-      throw error;
-    }
     setBudgets(prev => prev.map(b => b.id === updatedBudget.id ? data[0] : b));
-  }, [session]); // Add session to dependency array
+  }, [session]);
 
   const handleDeleteBudget = useCallback(async (id) => {
     const promise = supabase.from('budgets').delete().eq('id', id);
@@ -115,7 +107,10 @@ export default function App() {
         setBudgets(prev => prev.filter(b => b.id !== id));
         return 'Presupuesto eliminado';
       },
-      error: 'Error al eliminar el presupuesto',
+      error: (err) => {
+        handleSupabaseError(err, 'eliminar el presupuesto');
+        return 'Error al eliminar el presupuesto';
+      },
     });
   }, []);
 
@@ -134,12 +129,7 @@ export default function App() {
       setViewMode(VIEW_MODES.LIST);
   }
 
-  // Cálculos para el resumen
   const { totalIncome, totalExpense, balance } = summary;
-
-  
-
-  
 
   return (
     <>
@@ -198,74 +188,13 @@ export default function App() {
             {/* Contenido Principal */}
             <main>
                 {viewMode === VIEW_MODES.LIST && (
-                    <div>
-                        {/* Filtros de tipo */}
-                        <div className="flex justify-center space-x-2 mb-6 bg-slate-800 p-1 rounded-lg">
-                            <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.ALL)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.ALL ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
-                            <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.INCOME)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.INCOME ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
-                            <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.EXPENSE)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.EXPENSE ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
-                        </div>
-
-                        {/* Controles de Ordenación */}
-                        <div className="flex justify-end mb-4">
-                            <select 
-                                onChange={(e) => {
-                                    const [key, order] = e.target.value.split('-');
-                                    filterControls.setSortKey(key);
-                                    filterControls.setSortOrder(order);
-                                }}
-                                value={`${filterControls.sortKey}-${filterControls.sortOrder}`}
-                                className="bg-slate-800 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                            >
-                                <option value="date-desc">Fecha (Más reciente)</option>
-                                <option value="date-asc">Fecha (Más antigua)</option>
-                                <option value="amount-desc">Cantidad (Mayor a menor)</option>
-                                <option value="amount-asc">Cantidad (Menor a mayor)</option>
-                                <option value="description-asc">Descripción (A-Z)</option>
-                                <option value="description-desc">Descripción (Z-A)</option>
-                            </select>
-                        </div>
-
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-bold text-white">
-                                {filterControls.selectedDate 
-                                    ? `Transacciones del ${new Date(filterControls.selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' })}`
-                                    : 'Transacciones Recientes'}
-                          </h2>
-                          {filterControls.selectedDate && (
-                              <button onClick={() => filterControls.setSelectedDate(null)} className="text-sky-400 hover:text-sky-300 font-bold">
-                                  Mostrar todas
-                              </button>
-                          )}
-                      </div>
-                      <ul>
-                          {transactions.length > 0 
-                              ? transactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={deleteTransaction} />)
-                              : <p className="text-slate-500 text-center py-8">No hay transacciones que coincidan con los filtros seleccionados.</p>
-                          }
-                      </ul>
-
-                      {/* Controles de Paginación */}
-                      {paginationControls.totalPages > 1 && (
-                          <div className="flex justify-center items-center space-x-4 mt-6">
-                              <button 
-                                  onClick={() => paginationControls.setCurrentPage(p => p - 1)} 
-                                  disabled={paginationControls.currentPage === 1}
-                                  className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                  Anterior
-                              </button>
-                              <span className="text-slate-400">Página {paginationControls.currentPage} de {paginationControls.totalPages}</span>
-                              <button 
-                                  onClick={() => paginationControls.setCurrentPage(p => p + 1)} 
-                                  disabled={paginationControls.currentPage === paginationControls.totalPages}
-                                  className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                  Siguiente
-                              </button>
-                          </div>
-                      )}
-                  </div>
+                <ListView
+                  transactions={transactions}
+                  filterControls={filterControls}
+                  paginationControls={paginationControls}
+                  openModalForEdit={openModalForEdit}
+                  deleteTransaction={deleteTransaction}
+                />
               )}
 
               {viewMode === VIEW_MODES.CALENDAR && (
@@ -273,32 +202,19 @@ export default function App() {
               )}
 
               {viewMode === VIEW_MODES.ANALYSIS && (
-                  <>
-                      <div className="bg-slate-800 p-6 rounded-2xl shadow-lg mb-8">
-                          <h2 className="text-white text-2xl font-bold mb-4">Gastos por Categoría</h2>
-                          {expensesByCategory.length > 0 ? (
-                              <CategoryChart data={expensesByCategory} />
-                          ) : (
-                              <p className="text-slate-400 text-center py-8">No hay gastos para mostrar en el gráfico.</p>
-                          )}
-                      </div>
-                      <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-                          {monthlyFinancialData.labels.length > 0 ? (
-                              <MonthlyChart data={monthlyFinancialData} />
-                          ) : (
-                              <p className="text-slate-400 text-center py-8">No hay datos suficientes para mostrar el gráfico de ingresos vs. gastos mensuales.</p>
-                          )}
-                      </div>
-                  </>
+                <AnalysisView
+                  expensesByCategory={expensesByCategory}
+                  monthlyFinancialData={monthlyFinancialData}
+                />
               )}
 
               {viewMode === VIEW_MODES.BUDGETS && (
-                  <BudgetManager 
-                      budgets={budgets}
-                      onAddBudget={handleAddBudget}
-                      onUpdateBudget={handleUpdateBudget}
-                      onDeleteBudget={handleDeleteBudget}
-                  />
+                <BudgetsView
+                  budgets={budgets}
+                  onAddBudget={handleAddBudget}
+                  onUpdateBudget={handleUpdateBudget}
+                  onDeleteBudget={handleDeleteBudget}
+                />
               )}
 
               {viewMode === VIEW_MODES.SECURITY && (
