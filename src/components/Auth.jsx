@@ -8,6 +8,10 @@ export default function Auth({ supabase }) {
 
     const handleMagicLinkLogin = async (e) => {
         e.preventDefault();
+        if (!email) {
+            toast.error('Por favor, introduce un correo para enviar el enlace.');
+            return;
+        }
         setLoading(true);
         const { error } = await supabase.auth.signInWithOtp({ email });
         if (error) {

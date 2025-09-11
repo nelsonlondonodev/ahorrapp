@@ -63,15 +63,16 @@ export default function App() {
 
   return (
     <>
+      <Toaster position="bottom-center" toastOptions={{
+        className: 'bg-slate-800 text-white',
+      }}/>
+
       {showPasswordReset && <ResetPasswordModal supabase={supabase} onClose={() => setShowPasswordReset(false)} />}
 
       {!session ? (
         <Auth supabase={supabase} />
       ) : (
         <div className="bg-slate-900 text-white min-h-screen font-sans">
-          <Toaster position="bottom-center" toastOptions={{
-            className: 'bg-slate-800 text-white',
-          }}/>
           <div className="container mx-auto p-4 md:p-8">
             
             <AppHeader session={session} />
