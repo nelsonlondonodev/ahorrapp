@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import CalendarView from './components/CalendarView';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
-import AddTransactionModal from './components/AddTransactionModal';
-import { PlusIcon, TrashIcon, EditIcon } from './components/Icons';
+import { useBudgets } from './hooks/useBudgets';
+import AddTransactionSection from './components/AddTransactionSection';
 import SummaryCards from './components/SummaryCards';
 import ResetPasswordModal from './components/ResetPasswordModal';
 import Auth from './components/Auth';
@@ -13,26 +13,8 @@ import ListView from './components/ListView';
 import AnalysisView from './components/AnalysisView';
 import BudgetsView from './components/BudgetsView';
 import SecurityView from './components/SecurityView';
-import AuthenticatedApp from './components/AuthenticatedApp';
+import AppHeader from './components/AppHeader';
 import { VIEW_MODES } from './constants';
-
-const getUserId = (session) => {
-  if (!session?.user?.id) {
-    console.error('No user session found.');
-    toast.error('Usuario no autenticado.');
-    return null;
-  }
-  return session.user.id;
-};
-
-const handleSupabaseError = (error, operationName) => {
-  if (error) {
-    console.error(`Error al ${operationName}:`, error);
-    toast.error(`Error al ${operationName}.`);
-    return true; // Indicates an error occurred
-  }
-  return false; // Indicates no error
-};
 
 export default function App() {
   const { session, loading: authLoading, showPasswordReset, setShowPasswordReset } = useAuth();
@@ -49,67 +31,11 @@ export default function App() {
     deleteTransaction,
   } = useTransactions(session);
 
-  const [budgets, setBudgets] = useState([]);
+  const { budgets, handleAddBudget, handleUpdateBudget, handleDeleteBudget } = useBudgets(session);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchBudgets = async () => {
-      if (!session) return;
-      const { data, error } = await supabase.from('budgets').select('*');
-      if (error) {
-        console.error('Error al obtener presupuestos:', error);
-      } else {
-        setBudgets(data);
-      }
-    };
-    fetchBudgets();
-  }, [session]);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [viewMode, setViewMode] = useState(VIEW_MODES.CALENDAR); // 'list' or 'calendar'
-
-  
-
-  // --- Funciones CRUD para Presupuestos ---
-
-  const handleAddBudget = useCallback(async (newBudget) => {
-    const userId = getUserId(session);
-    if (!userId) return;
-
-    const budgetWithUserId = { ...newBudget, user_id: userId };
-    const { data, error } = await supabase.from('budgets').insert(budgetWithUserId).select();
-    if (handleSupabaseError(error, 'añadir presupuesto')) {
-      return;
-    }
-    setBudgets(prev => [...prev, ...data]);
-  }, [session]);
-
-  const handleUpdateBudget = useCallback(async (updatedBudget) => {
-    const userId = getUserId(session);
-    if (!userId) return;
-
-    const budgetWithUserId = { ...updatedBudget, user_id: userId };
-    const { data, error } = await supabase.from('budgets').update(budgetWithUserId).eq('id', updatedBudget.id).select();
-    if (handleSupabaseError(error, 'actualizar presupuesto')) {
-      return;
-    }
-    setBudgets(prev => prev.map(b => b.id === updatedBudget.id ? data[0] : b));
-  }, [session]);
-
-  const handleDeleteBudget = useCallback(async (id) => {
-    const promise = supabase.from('budgets').delete().eq('id', id);
-
-    toast.promise(promise, {
-      loading: 'Eliminando presupuesto...',
-      success: () => {
-        setBudgets(prev => prev.filter(b => b.id !== id));
-        return 'Presupuesto eliminado';
-      },
-      error: (err) => {
-        handleSupabaseError(err, 'eliminar el presupuesto');
-        return 'Error al eliminar el presupuesto';
-      },
-    });
-  }, []);
+  const [viewMode, setViewMode] = useState(VIEW_MODES.CALENDAR);
 
   const openModalForEdit = useCallback((transaction) => {
       setEditingTransaction(transaction);
@@ -142,23 +68,7 @@ export default function App() {
           <div className="container mx-auto p-4 md:p-8">
             
             {/* Cabecera */}
-            <header className="flex items-center justify-between mb-8">
-              <div className="flex items-center space-x-4">
-                <div className="bg-slate-800 p-3 rounded-full">
-                  <span className="text-white font-bold text-lg">A</span>
-                </div>
-                <h1 className="text-2xl font-bold text-white">Ahorrapp</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <p className="text-slate-400 hidden md:block">{session.user.email}</p>
-                <button 
-                  onClick={() => supabase.auth.signOut()}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-4 rounded-lg transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            </header>
+            <AppHeader session={session} />
 
             {/* Resumen de tarjetas */}
             <SummaryCards totalIncome={totalIncome} totalExpense={totalExpense} balance={balance} />
@@ -209,23 +119,17 @@ export default function App() {
               )}
           </main>
 
-          {/* Botón flotante para añadir transacción */}
-          <div className="fixed bottom-8 right-8">
-              <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-sky-600 hover:bg-sky-700 text-white rounded-full p-4 shadow-lg shadow-sky-600/30 transform hover:scale-110 transition-transform"
-              >
-                  <PlusIcon />
-              </button>
-          </div>
-
-          {/* Modal */}
-          {isModalOpen && <AddTransactionModal 
-              onClose={closeModal}
-              onSave={saveTransaction}
-              transactionToEdit={editingTransaction}
-              selectedDate={filterControls.selectedDate}
-          />}
+          {/* Botón flotante para añadir transacción y Modal */}
+          <AddTransactionSection
+            saveTransaction={saveTransaction}
+            selectedDate={filterControls.selectedDate}
+            isModalOpen={isModalOpen}
+            editingTransaction={editingTransaction}
+            openModalForEdit={openModalForEdit}
+            closeModal={closeModal}
+            setIsModalOpen={setIsModalOpen}
+            setEditingTransaction={setEditingTransaction}
+          />
 
         </div>
       </div>
