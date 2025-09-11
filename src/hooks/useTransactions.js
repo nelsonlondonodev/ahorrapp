@@ -1,42 +1,32 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../supabaseClient';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useMemo } from 'react';
+import { useAppStore } from '../store/useAppStore';
 import { TRANSACTION_TYPES } from '../constants';
 
-// Hook para gestionar toda la lógica de transacciones
+// Hook para gestionar la lógica de PRESENTACIÓN de transacciones
 export function useTransactions(session) {
-  // --- ESTADO CRUD --- 
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // --- CONEXIÓN AL STORE --- 
+  const {
+    transactions,
+    transactionsLoading,
+    fetchTransactions,
+    saveTransaction,
+    deleteTransaction,
+  } = useAppStore();
 
-  // --- ESTADO DE FILTRADO Y ORDENACIÓN ---
-  const [typeFilter, setTypeFilter] = useState(TRANSACTION_TYPES.ALL); // 'all', 'income', 'expense'
+  // --- ESTADO LOCAL DEL HOOK (Filtros, Paginación, etc.) ---
+  const [typeFilter, setTypeFilter] = useState(TRANSACTION_TYPES.ALL);
   const [sortKey, setSortKey] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [selectedDate, setSelectedDate] = useState(null); // YYYY-MM-DD
-
-  // --- ESTADO DE PAGINACIÓN ---
+  const [selectedDate, setSelectedDate] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Efecto para cargar las transacciones iniciales
+  // Efecto para cargar las transacciones iniciales desde el store
   useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!session) return;
-      setLoading(true);
-      const { data, error } = await supabase.from('transactions').select('*');
-      
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        toast.error('No se pudieron cargar las transacciones.');
-      } else {
-        setTransactions(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      }
-      setLoading(false);
-    };
-
-    fetchTransactions();
-  }, [session]);
+    if (session) {
+      fetchTransactions();
+    }
+  }, [session, fetchTransactions]);
 
   // Efecto para resetear la paginación cuando cambian los filtros
   useEffect(() => {
@@ -44,49 +34,7 @@ export function useTransactions(session) {
   }, [typeFilter, selectedDate, sortKey, sortOrder]);
 
 
-  // --- FUNCIONES CRUD (Create, Read, Update, Delete) ---
-
-  const addTransaction = useCallback(async (newTransaction) => {
-    const { data, error } = await supabase.from('transactions').insert(newTransaction).select();
-    if (error) {
-      console.error('Error adding transaction:', error);
-      throw error; // Re-throw for toast.promise to catch
-    }
-    setTransactions(prev => [...prev, ...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
-
-  const updateTransaction = useCallback(async (updatedTransaction) => {
-    const { data, error } = await supabase.from('transactions').update(updatedTransaction).eq('id', updatedTransaction.id).select();
-    if (error) {
-      console.error('Error updating transaction:', error);
-      throw error;
-    }
-    setTransactions(prev => prev.map(t => t.id === updatedTransaction.id ? data[0] : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
-
-  const deleteTransaction = useCallback(async (id) => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) {
-      console.error('Error deleting transaction:', error);
-      throw error;
-    }
-    setTransactions(prev => prev.filter(t => t.id !== id));
-  }, []);
-
-  const saveTransaction = useCallback(async (transactionData) => {
-    const promise = transactionData.id
-      ? updateTransaction(transactionData)
-      : addTransaction(transactionData);
-    
-    await toast.promise(promise, {
-      loading: 'Guardando...',
-      success: 'Transacción guardada',
-      error: 'Error al guardar la transacción',
-    });
-  }, [addTransaction, updateTransaction]);
-
-
-  // --- DATOS DERIVADOS Y MEMOIZADOS ---
+  // --- DATOS DERIVADOS Y MEMOIZADOS (Lógica de Presentación) ---
 
   // 1. Filtrar transacciones
   const filteredTransactions = useMemo(() => {
@@ -184,9 +132,8 @@ export function useTransactions(session) {
   return {
     // Estado y datos
     paginatedTransactions,
-    allTransactions: transactions, // New: raw transactions for calendar
-    displayTransactions,
-    loading,
+    allTransactions: transactions, // Raw transactions for calendar
+    loading: transactionsLoading, // Renamed for clarity
     summary,
     expensesByCategory,
     monthlyFinancialData,
@@ -205,7 +152,7 @@ export function useTransactions(session) {
       totalPages,
     },
 
-    // Funciones CRUD
+    // Funciones CRUD (ahora vienen del store)
     saveTransaction,
     deleteTransaction,
   };
