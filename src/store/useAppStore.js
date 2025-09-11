@@ -125,7 +125,10 @@ export const useAppStore = create((set, get) => ({
   },
 
   handleUpdateBudget: async (updatedBudget) => {
-    const { data, error } = await supabase.from('budgets').update(updatedBudget).eq('id', updatedBudget.id).select();
+    // Excluimos las propiedades derivadas que no existen en la base de datos
+    const { spentAmount, remainingAmount, isOverspent, isFullySpent, ...dataToUpdate } = updatedBudget;
+
+    const { data, error } = await supabase.from('budgets').update(dataToUpdate).eq('id', updatedBudget.id).select();
 
     if (!handleSupabaseError(error, 'actualizar presupuesto')) {
       set((state) => ({ 
