@@ -96,7 +96,7 @@ export function useTransactions(session) {
   }, [transactions, selectedDate, typeFilter]);
 
   // 2. Ordenar transacciones
-  const sortedTransactions = useMemo(() => {
+  const displayTransactions = useMemo(() => {
     return [...filteredTransactions].sort((a, b) => {
       let valA = a[sortKey];
       let valB = b[sortKey];
@@ -114,13 +114,13 @@ export function useTransactions(session) {
 
   // 3. Paginar transacciones
   const paginatedTransactions = useMemo(() => {
-    return sortedTransactions.slice(
+    return displayTransactions.slice(
       (currentPage - 1) * itemsPerPage,
       currentPage * itemsPerPage
     );
-  }, [sortedTransactions, currentPage, itemsPerPage]);
+  }, [displayTransactions, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
+  const totalPages = Math.ceil(displayTransactions.length / itemsPerPage);
 
   // 4. Cálculos para el resumen (Dashboard)
   const summary = useMemo(() => {
@@ -184,7 +184,8 @@ export function useTransactions(session) {
   return {
     // Estado y datos
     paginatedTransactions,
-    sortedTransactions, // Exportar para vistas que necesitan todos los datos (ej. Calendario)
+    allTransactions: transactions, // New: raw transactions for calendar
+    displayTransactions,
     loading,
     summary,
     expensesByCategory,

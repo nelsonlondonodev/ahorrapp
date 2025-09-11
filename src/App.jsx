@@ -20,7 +20,8 @@ export default function App() {
   const { session, loading: authLoading, showPasswordReset, setShowPasswordReset } = useAuth();
   const {
     paginatedTransactions: transactions,
-    sortedTransactions,
+    allTransactions,
+    displayTransactions,
     loading: transactionsLoading,
     summary,
     expensesByCategory,
@@ -95,7 +96,7 @@ export default function App() {
               )}
 
               {viewMode === VIEW_MODES.CALENDAR && (
-                  <CalendarView transactions={sortedTransactions} onDateClick={handleDateClick} />
+                  <CalendarView transactions={allTransactions} onDateClick={handleDateClick} />
               )}
 
               {viewMode === VIEW_MODES.ANALYSIS && (
