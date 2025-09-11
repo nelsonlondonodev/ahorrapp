@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import CalendarView from './components/CalendarView';
-import CategoryChart from './components/CategoryChart';
-import MonthlyChart from './components/MonthlyChart';
-import BudgetManager from './components/BudgetManager';
-import MfaSetup from './components/MfaSetup';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from './supabaseClient';
 import { useAuth } from './hooks/useAuth';
 import { useTransactions } from './hooks/useTransactions';
 import AddTransactionModal from './components/AddTransactionModal';
-import { PlusIcon, ArrowUpIcon, ArrowDownIcon, TrashIcon, EditIcon } from './components/Icons';
-import SummaryCard from './components/SummaryCard';
-import TransactionItem from './components/TransactionItem';
+import { PlusIcon, TrashIcon, EditIcon } from './components/Icons';
+import SummaryCards from './components/SummaryCards';
 import ResetPasswordModal from './components/ResetPasswordModal';
 import Auth from './components/Auth';
 import ListView from './components/ListView';
 import AnalysisView from './components/AnalysisView';
 import BudgetsView from './components/BudgetsView';
-import { VIEW_MODES, TRANSACTION_TYPES } from './constants';
+import SecurityView from './components/SecurityView';
+import AuthenticatedApp from './components/AuthenticatedApp';
+import { VIEW_MODES } from './constants';
 
 const getUserId = (session) => {
   if (!session?.user?.id) {
@@ -124,10 +121,10 @@ export default function App() {
       setEditingTransaction(null);
   }
 
-  const handleDateClick = (date) => {
+  const handleDateClick = useCallback((date) => {
       filterControls.setSelectedDate(date);
       setViewMode(VIEW_MODES.LIST);
-  }
+  }, [filterControls, setViewMode]);
 
   const { totalIncome, totalExpense, balance } = summary;
 
@@ -164,17 +161,7 @@ export default function App() {
             </header>
 
             {/* Resumen de tarjetas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <SummaryCard title="Ingresos Totales" amount={totalIncome} colorClass="bg-green-500/10">
-                <ArrowUpIcon />
-              </SummaryCard>
-              <SummaryCard title="Gastos Totales" amount={totalExpense} colorClass="bg-red-500/10">
-                <ArrowDownIcon />
-              </SummaryCard>
-              <SummaryCard title="Balance Actual" amount={balance} colorClass="bg-sky-500/10">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
-              </SummaryCard>
-            </div>
+            <SummaryCards totalIncome={totalIncome} totalExpense={totalExpense} balance={balance} />
 
             {/* Selector de Vista */}
             <div className="mb-6 flex justify-center bg-slate-800 rounded-lg p-1">
@@ -218,7 +205,7 @@ export default function App() {
               )}
 
               {viewMode === VIEW_MODES.SECURITY && (
-                  <MfaSetup />
+                <SecurityView />
               )}
           </main>
 
