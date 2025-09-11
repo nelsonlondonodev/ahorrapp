@@ -62,14 +62,22 @@ function BudgetModal({ onClose, onSave, budgetToEdit }) {
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label className="block text-slate-400 text-sm font-bold mb-2">Categoría</label>
-                        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-                           <option>Comida</option>
-                           <option>Vivienda</option>
-                           <option>Transporte</option>
-                           <option>Ocio</option>
-                           <option>Salario</option>
-                           <option>Otros</option>
-                        </select>
+                        <input
+                          type="text"
+                          list="category-suggestions"
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                          className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          placeholder="Escribe o selecciona una categoría"
+                        />
+                        <datalist id="category-suggestions">
+                          <option value="Comida" />
+                          <option value="Vivienda" />
+                          <option value="Transporte" />
+                          <option value="Ocio" />
+                          <option value="Salario" />
+                          <option value="Otros" />
+                        </datalist>
                     </div>
                     <div className="mb-4">
                         <label className="block text-slate-400 text-sm font-bold mb-2">Cantidad Presupuestada</label>
@@ -144,26 +152,33 @@ const BudgetManager = ({ budgets, onAddBudget, onUpdateBudget, onDeleteBudget })
                 <p className="text-slate-400 text-center py-8">No hay presupuestos definidos. ¡Añade uno para empezar!</p>
             ) : (
                 <ul className="space-y-3">
-                    {budgets.map(budget => (
-                        <li key={budget.id} className="flex items-center justify-between p-4 bg-slate-700 rounded-lg">
-                            <div>
-                                <p className="text-white font-semibold">{budget.category}</p>
-                                <p className="text-slate-400 text-sm">
-                                    {budget.amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                                    {budget.start_date && ` desde ${new Date(budget.start_date + 'T00:00:00').toLocaleDateString('es-ES')}`}
-                                    {budget.end_date && ` hasta ${new Date(budget.end_date + 'T00:00:00').toLocaleDateString('es-ES')}`}
-                                </p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <button onClick={() => openModalForEdit(budget)} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-600">
-                                    <EditIcon />
-                                </button>
-                                <button onClick={() => onDeleteBudget(budget.id)} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-600">
-                                    <TrashIcon />
-                                </button>
-                            </div>
-                        </li>
-                    ))}
+                    {budgets.map(budget => {
+                        const budgetItemClass = `flex items-center justify-between p-4 rounded-lg ${budget.isOverspent ? 'bg-red-700' : budget.isFullySpent ? 'bg-orange-700' : 'bg-slate-700'}`;
+                        return (
+                            <li key={budget.id} className={budgetItemClass}>
+                                <div>
+                                    <p className="text-white font-semibold">{budget.category}</p>
+                                    <p className="text-slate-400 text-sm">
+                                        Presupuestado: {budget.amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                    </p>
+                                    <p className="text-slate-400 text-sm">
+                                        Gastado: {budget.spentAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                    </p>
+                                    <p className="text-slate-400 text-sm">
+                                        Restante: {budget.remainingAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                    </p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <button onClick={() => openModalForEdit(budget)} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-600">
+                                        <EditIcon />
+                                    </button>
+                                    <button onClick={() => onDeleteBudget(budget.id)} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-600">
+                                        <TrashIcon />
+                                    </button>
+                                </div>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
 

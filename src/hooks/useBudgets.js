@@ -3,12 +3,14 @@ import { useAppStore } from '../store/useAppStore';
 
 export const useBudgets = (session) => {
   const {
-    budgets,
     fetchBudgets,
     handleAddBudget,
     handleUpdateBudget,
     handleDeleteBudget,
+    getBudgetsWithSpending, // Nueva función para obtener presupuestos con gasto
   } = useAppStore();
+
+  const budgetsWithSpending = getBudgetsWithSpending(); // Obtenemos los presupuestos con gasto
 
   useEffect(() => {
     if (session) {
@@ -17,7 +19,7 @@ export const useBudgets = (session) => {
   }, [session, fetchBudgets]);
 
   return {
-    budgets,
+    budgets: budgetsWithSpending, // Devolvemos los presupuestos con gasto
     handleAddBudget,
     handleUpdateBudget,
     handleDeleteBudget,

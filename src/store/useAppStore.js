@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { VIEW_MODES } from '../constants';
+import { VIEW_MODES, CATEGORIES, TRANSACTION_TYPES } from '../constants';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
 
@@ -143,12 +143,45 @@ export const useAppStore = create((set, get) => ({
     };
 
     await toast.promise(promise(), {
-      loading: 'Eliminando presupuesto...',
+      loading: 'Eliminando...',
       success: 'Presupuesto eliminado',
       error: (err) => {
         handleSupabaseError(err, 'eliminar el presupuesto');
         return 'Error al eliminar el presupuesto'; // Return message for toast
       },
     });
+  },
+
+  // ====================================================================
+  // Derived state & selectors
+  // ====================================================================
+  getBudgetCategories: () => {
+    const { budgets } = get();
+    const budgetCategories = budgets.map(b => b.category).filter(Boolean);
+    return [...new Set(budgetCategories)].sort();
+  },
+
+  getBudgetsWithSpending: () => {
+    const { budgets, transactions } = get();
+    return budgets.map(budget => {
+      const spentAmount = transactions
+        .filter(t => t.category === budget.category && t.type === TRANSACTION_TYPES.EXPENSE)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        ...budget,
+        spentAmount,
+        remainingAmount: budget.amount - spentAmount,
+        isOverspent: spentAmount > budget.amount,
+        isFullySpent: spentAmount >= budget.amount && spentAmount > 0,
+      };
+    });
+  },
+
+  getAvailableCategories: () => {
+    const { transactions, budgets } = get();
+    const transactionCategories = transactions.map(t => t.category).filter(Boolean);
+    const budgetCategories = budgets.map(b => b.category).filter(Boolean);
+    const combined = [...new Set([...transactionCategories, ...budgetCategories])];
+    return combined.sort();
   },
 }));
