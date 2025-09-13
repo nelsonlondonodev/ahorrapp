@@ -6,10 +6,14 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { useAppStore } from '../store/useAppStore';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 function CategoryChart({ data }) {
+  const theme = useAppStore((state) => state.theme);
+  const legendColor = theme === 'dark' ? '#fff' : '#334155';
+
   const chartData = {
     labels: data.map(item => item.category),
     datasets: [
@@ -44,7 +48,7 @@ function CategoryChart({ data }) {
       legend: {
         position: 'top',
         labels: {
-            color: '#fff',
+            color: legendColor,
             font: {
                 size: 14
             }
@@ -68,7 +72,7 @@ function CategoryChart({ data }) {
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg h-96">
+    <div className="h-96">
         <Doughnut data={chartData} options={options} />
     </div>
   );

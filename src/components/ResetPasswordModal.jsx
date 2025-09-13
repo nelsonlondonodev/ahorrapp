@@ -24,14 +24,14 @@ export default function ResetPasswordModal({ supabase, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-                <h2 className="text-white text-2xl font-bold mb-6">Crea tu nueva contraseña</h2>
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
+                <h2 className="text-slate-800 dark:text-white text-2xl font-bold mb-6">Crea tu nueva contraseña</h2>
                 <form onSubmit={handlePasswordReset}>
                     <div className="mb-6">
-                        <label htmlFor="new-password" className="block text-slate-400 text-sm font-bold mb-2">Nueva Contraseña</label>
+                        <label htmlFor="new-password" className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Nueva Contraseña</label>
                         <input
                             id="new-password"
-                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                             type="password"
                             placeholder="••••••••"
                             value={password}

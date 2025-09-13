@@ -1,1 +1,12 @@
-@import "tailwindcss";
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900;
+  }
+  .dark body {
+    @apply bg-gray-900 text-white;
+  }
+}

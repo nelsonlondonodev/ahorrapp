@@ -57,17 +57,17 @@ function BudgetModal({ onClose, onSave, budgetToEdit }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-                <h2 className="text-white text-2xl font-bold mb-6">{budgetToEdit ? 'Editar' : 'Añadir'} Presupuesto</h2>
+            <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
+                <h2 className="text-slate-800 dark:text-white text-2xl font-bold mb-6">{budgetToEdit ? 'Editar' : 'Añadir'} Presupuesto</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <label className="block text-slate-400 text-sm font-bold mb-2">Categoría</label>
+                        <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Categoría</label>
                         <input
                           type="text"
                           list="category-suggestions"
                           value={category}
                           onChange={(e) => setCategory(e.target.value)}
-                          className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                           placeholder="Escribe o selecciona una categoría"
                         />
                         <datalist id="category-suggestions">
@@ -80,22 +80,22 @@ function BudgetModal({ onClose, onSave, budgetToEdit }) {
                         </datalist>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-slate-400 text-sm font-bold mb-2">Cantidad Presupuestada</label>
-                        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.00"/>
+                        <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Cantidad Presupuestada</label>
+                        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.00"/>
                     </div>
                     <div className="flex gap-4 mb-6">
                         <div className="flex-1">
-                            <label className="block text-slate-400 text-sm font-bold mb-2">Fecha de Inicio</label>
-                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Fecha de Inicio</label>
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                         </div>
                         <div className="flex-1">
-                            <label className="block text-slate-400 text-sm font-bold mb-2">Fecha de Fin (Opcional)</label>
-                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"/>
+                            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Fecha de Fin (Opcional)</label>
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"/>
                         </div>
                     </div>
 
                     <div className="flex justify-end gap-4">
-                        <button type="button" onClick={onClose} className="text-slate-300 font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors">Cancelar</button>
+                        <button type="button" onClick={onClose} className="text-slate-600 dark:text-slate-300 font-bold py-3 px-6 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
                         <button 
                             type="submit" 
                             className="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20"
@@ -137,8 +137,8 @@ const BudgetManager = ({ budgets, onAddBudget, onUpdateBudget, onDeleteBudget })
     };
 
     return (
-        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-            <h2 className="text-white text-2xl font-bold mb-4">Gestión de Presupuestos</h2>
+        <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl shadow-lg">
+            <h2 className="text-slate-800 dark:text-white text-2xl font-bold mb-4">Gestión de Presupuestos</h2>
             
             <button 
                 onClick={() => setIsModalOpen(true)}
@@ -149,30 +149,30 @@ const BudgetManager = ({ budgets, onAddBudget, onUpdateBudget, onDeleteBudget })
             </button>
 
             {budgets.length === 0 ? (
-                <p className="text-slate-400 text-center py-8">No hay presupuestos definidos. ¡Añade uno para empezar!</p>
+                <p className="text-slate-500 dark:text-slate-400 text-center py-8">No hay presupuestos definidos. ¡Añade uno para empezar!</p>
             ) : (
                 <ul className="space-y-3">
                     {budgets.map(budget => {
-                        const budgetItemClass = `flex items-center justify-between p-4 rounded-lg ${budget.isOverspent ? 'bg-red-700' : budget.isFullySpent ? 'bg-orange-700' : 'bg-slate-700'}`;
+                        const budgetItemClass = `flex items-center justify-between p-4 rounded-lg ${budget.isOverspent ? 'bg-red-500/20 dark:bg-red-700' : budget.isFullySpent ? 'bg-orange-500/20 dark:bg-orange-700' : 'bg-slate-200 dark:bg-slate-700'}`;
                         return (
                             <li key={budget.id} className={budgetItemClass}>
                                 <div>
-                                    <p className="text-white font-semibold">{budget.category}</p>
-                                    <p className="text-slate-400 text-sm">
+                                    <p className="text-slate-800 dark:text-white font-semibold">{budget.category}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
                                         Presupuestado: {budget.amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                     </p>
-                                    <p className="text-slate-400 text-sm">
+                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
                                         Gastado: {budget.spentAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                     </p>
-                                    <p className="text-slate-400 text-sm">
+                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
                                         Restante: {budget.remainingAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                     </p>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <button onClick={() => openModalForEdit(budget)} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-600">
+                                    <button onClick={() => openModalForEdit(budget)} className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-2 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600">
                                         <EditIcon />
                                     </button>
-                                    <button onClick={() => onDeleteBudget(budget.id)} className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-600">
+                                    <button onClick={() => onDeleteBudget(budget.id)} className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-2 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600">
                                         <TrashIcon />
                                     </button>
                                 </div>

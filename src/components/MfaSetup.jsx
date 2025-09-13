@@ -160,11 +160,11 @@ const MfaSetup = () => {
   const renderContent = () => {
     switch (view) {
       case 'loading':
-        return <p className="text-slate-400">Cargando estado de MFA...</p>;
+        return <p className="text-slate-500 dark:text-slate-400">Cargando estado de MFA...</p>;
       case 'enabled':
         return (
           <div className="text-center">
-            <p className="text-green-400 mb-4">MFA está actualmente habilitado para tu cuenta.</p>
+            <p className="text-green-600 dark:text-green-400 mb-4">MFA está actualmente habilitado para tu cuenta.</p>
             <button
               onClick={disableMfa}
               disabled={loading}
@@ -177,20 +177,20 @@ const MfaSetup = () => {
       case 'pendingVerification':
         return (
           <div className="text-center">
-            <p className="text-slate-300 mb-4">Escanea el código QR con tu aplicación de autenticación (ej. Google Authenticator):</p>
+            <p className="text-slate-600 dark:text-slate-300 mb-4">Escanea el código QR con tu aplicación de autenticación (ej. Google Authenticator):</p>
             <div className="bg-white p-4 inline-block rounded-lg mb-4">
               {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="Código QR de MFA" className="w-48 h-48" />}
             </div>
-            <p className="text-slate-400 text-sm mb-4">O introduce el secreto manualmente: <span className="font-mono text-white break-all">{secret}</span></p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">O introduce el secreto manualmente: <span className="font-mono text-slate-800 dark:text-white break-all">{secret}</span></p>
 
             <div className="mb-4">
-              <label htmlFor="mfa-code" className="block text-slate-400 text-sm font-bold mb-2">Código de Verificación</label>
+              <label htmlFor="mfa-code" className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Código de Verificación</label>
               <input
                 id="mfa-code"
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-center tracking-widest"
+                className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 text-center tracking-widest"
                 placeholder="XXXXXX"
                 maxLength="6"
               />
@@ -219,9 +219,9 @@ const MfaSetup = () => {
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-      <h2 className="text-white text-2xl font-bold mb-4">Configurar Autenticación de Múltiples Factores (MFA)</h2>
-      <p className="text-slate-400 mb-6">Añade una capa extra de seguridad a tu cuenta.</p>
+    <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl shadow-lg">
+      <h2 className="text-slate-800 dark:text-white text-2xl font-bold mb-4">Configurar Autenticación de Múltiples Factores (MFA)</h2>
+      <p className="text-slate-600 dark:text-slate-400 mb-6">Añade una capa extra de seguridad a tu cuenta.</p>
       {renderContent()}
     </div>
   );

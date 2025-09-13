@@ -78,39 +78,39 @@ const AddTransactionModal = () => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-        <h2 className="text-white text-2xl font-bold mb-6">{editingTransaction ? 'Editar' : 'Añadir'} Transacción</h2>
+      <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
+        <h2 className="text-slate-800 dark:text-white text-2xl font-bold mb-6">{editingTransaction ? 'Editar' : 'Añadir'} Transacción</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-slate-400 text-sm font-bold mb-2">Tipo</label>
-            <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Tipo</label>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
               <option value={TRANSACTION_TYPES.EXPENSE}>Gasto</option>
               <option value={TRANSACTION_TYPES.INCOME}>Ingreso</option>
             </select>
           </div>
           <div className="mb-4">
-            <label className="block text-slate-400 text-sm font-bold mb-2">Cantidad</label>
-            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.00" />
+            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Cantidad</label>
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="0.00" />
           </div>
           <div className="mb-4">
-            <label className="block text-slate-400 text-sm font-bold mb-2">Categoría</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Categoría</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
               {availableCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
           </div>
           <div className="mb-4">
-            <label className="block text-slate-400 text-sm font-bold mb-2">Descripción (Opcional)</label>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Ej. Café de la mañana" />
+            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Descripción (Opcional)</label>
+            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="Ej. Café de la mañana" />
           </div>
           <div className="mb-6">
-            <label className="block text-slate-400 text-sm font-bold mb-2">Fecha</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <label className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Fecha</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" />
           </div>
 
           <div className="flex justify-end gap-4">
-            <button type="button" onClick={closeModal} className="text-slate-300 font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors">Cancelar</button>
+            <button type="button" onClick={closeModal} className="text-slate-600 dark:text-slate-300 font-bold py-3 px-6 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
             <button
               type="submit"
               className="bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20"

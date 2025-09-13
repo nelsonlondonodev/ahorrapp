@@ -33,6 +33,8 @@ export const useAppStore = create((set, get) => ({
   // ====================================================================
   // UI state & actions
   // ====================================================================
+  theme: 'light',
+  toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
   viewMode: VIEW_MODES.CALENDAR,
   isModalOpen: false,
   editingTransaction: null,

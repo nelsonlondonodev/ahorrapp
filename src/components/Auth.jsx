@@ -65,16 +65,16 @@ export default function Auth({ supabase }) {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
-            <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
-                <h1 className="text-3xl font-bold text-white text-center mb-2">Ahorrapp</h1>
-                <p className="text-slate-400 text-center mb-8">Inicia sesión o crea una cuenta</p>
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex flex-col items-center justify-center">
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md m-4">
+                <h1 className="text-3xl font-bold text-slate-800 dark:text-white text-center mb-2">Ahorrapp</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-center mb-8">Inicia sesión o crea una cuenta</p>
                 <form onSubmit={handlePasswordLogin}>
                     <div className="mb-4">
-                        <label htmlFor="email" className="block text-slate-400 text-sm font-bold mb-2">Correo Electrónico</label>
+                        <label htmlFor="email" className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Correo Electrónico</label>
                         <input
                             id="email"
-                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                             type="email"
                             placeholder="tu@email.com"
                             value={email}
@@ -83,10 +83,10 @@ export default function Auth({ supabase }) {
                         />
                     </div>
                     <div className="mb-6">
-                        <label htmlFor="password" className="block text-slate-400 text-sm font-bold mb-2">Contraseña</label>
+                        <label htmlFor="password" className="block text-slate-600 dark:text-slate-400 text-sm font-bold mb-2">Contraseña</label>
                         <input
                             id="password"
-                            className="w-full bg-slate-700 text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            className="w-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                             type="password"
                             placeholder="••••••••"
                             value={password}
@@ -97,7 +97,7 @@ export default function Auth({ supabase }) {
                             <button
                                 type="button"
                                 onClick={handlePasswordReset}
-                                className="text-sm text-sky-400 hover:text-sky-300 font-medium"
+                                className="text-sm text-sky-500 dark:text-sky-400 hover:text-sky-600 dark:hover:text-sky-300 font-medium"
                             >
                                 ¿Has olvidado tu contraseña?
                             </button>
@@ -114,7 +114,7 @@ export default function Auth({ supabase }) {
                         <button 
                             type="button"
                             onClick={handleMagicLinkLogin}
-                            className="w-full bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors shadow-lg shadow-slate-600/20 disabled:opacity-50"
+                            className="w-full bg-slate-500 dark:bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-600 dark:hover:bg-slate-700 transition-colors shadow-lg shadow-slate-600/20 disabled:opacity-50"
                             disabled={loading}
                         >
                             {loading ? <span>Enviando...</span> : <span>Enviar enlace mágico</span>}
@@ -123,9 +123,9 @@ export default function Auth({ supabase }) {
                 </form>
 
                 <div className="relative flex py-5 items-center">
-                    <div className="flex-grow border-t border-slate-600"></div>
-                    <span className="flex-shrink mx-4 text-slate-400">O</span>
-                    <div className="flex-grow border-t border-slate-600"></div>
+                    <div className="flex-grow border-t border-slate-300 dark:border-slate-600"></div>
+                    <span className="flex-shrink mx-4 text-slate-500 dark:text-slate-400">O</span>
+                    <div className="flex-grow border-t border-slate-300 dark:border-slate-600"></div>
                 </div>
 
                 <button

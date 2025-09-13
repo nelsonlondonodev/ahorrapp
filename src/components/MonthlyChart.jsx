@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { useAppStore } from '../store/useAppStore';
 
 // Register Chart.js components
 ChartJS.register(
@@ -23,19 +24,25 @@ ChartJS.register(
 );
 
 const MonthlyChart = ({ data }) => {
+  const theme = useAppStore((state) => state.theme);
+  const legendColor = theme === 'dark' ? '#cbd5e1' : '#475569';
+  const titleColor = theme === 'dark' ? '#f8fafc' : '#1e293b';
+  const ticksColor = theme === 'dark' ? '#94a3b8' : '#64748b';
+  const gridColor = theme === 'dark' ? 'rgba(100, 116, 139, 0.2)' : 'rgba(203, 213, 225, 0.5)';
+
   const options = {
     responsive: true,
     plugins: {
       legend: {
         position: 'top',
         labels: {
-          color: '#cbd5e1', // slate-300
+          color: legendColor,
         },
       },
       title: {
         display: true,
         text: 'Ingresos vs. Gastos Mensuales',
-        color: '#f8fafc', // slate-50
+        color: titleColor,
         font: {
           size: 18,
         },
@@ -58,28 +65,28 @@ const MonthlyChart = ({ data }) => {
     scales: {
       x: {
         ticks: {
-          color: '#94a3b8', // slate-400
+          color: ticksColor,
         },
         grid: {
-          color: 'rgba(100, 116, 139, 0.2)', // slate-500 with transparency
+          color: gridColor,
         },
       },
       y: {
         ticks: {
-          color: '#94a3b8', // slate-400
+          color: ticksColor,
           callback: function(value) {
             return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
           }
         },
         grid: {
-          color: 'rgba(100, 116, 139, 0.2)', // slate-500 with transparency
+          color: gridColor,
         },
       },
     },
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
+    <div>
       <Line options={options} data={data} />
     </div>
   );

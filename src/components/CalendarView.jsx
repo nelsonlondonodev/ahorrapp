@@ -8,41 +8,67 @@ const customCalendarStyles = `
     width: 100%;
     border: none;
     border-radius: 1rem;
+    background-color: #f1f5f9; /* bg-slate-100 */
+    color: #1e293b; /* text-slate-800 */
+    padding: 1rem;
+  }
+  .dark .react-calendar {
     background-color: #1e293b; /* bg-slate-800 */
     color: white;
-    padding: 1rem;
   }
 
   .react-calendar__navigation button {
-    color: white;
+    color: #1e293b; /* text-slate-800 */
     font-size: 1.25rem;
     font-weight: bold;
+  }
+  .dark .react-calendar__navigation button {
+    color: white;
   }
   
   .react-calendar__navigation button:hover,
   .react-calendar__navigation button:focus {
+    background-color: #e2e8f0 !important; /* bg-slate-200 */
+    color: #0ea5e9; /* text-sky-500 */
+  }
+  .dark .react-calendar__navigation button:hover,
+  .dark .react-calendar__navigation button:focus {
     background-color: #334155 !important; /* bg-slate-700 */
     color: #38bdf8; /* text-sky-400 */
   }
 
   .react-calendar__month-view__weekdays__weekday {
-    color: #94a3b8; /* text-slate-400 */
+    color: #64748b; /* text-slate-500 */
     text-transform: uppercase;
     font-weight: bold;
     font-size: 0.75rem;
   }
+  .dark .react-calendar__month-view__weekdays__weekday {
+    color: #94a3b8; /* text-slate-400 */
+  }
 
   .react-calendar__tile {
-    color: #cbd5e1; /* text-slate-300 */
+    color: #334155; /* text-slate-700 */
     border-radius: 0.5rem;
+  }
+  .dark .react-calendar__tile {
+    color: #cbd5e1; /* text-slate-300 */
   }
 
   .react-calendar__tile:enabled:hover,
   .react-calendar__tile:enabled:focus {
+    background-color: #e2e8f0; /* bg-slate-200 */
+  }
+  .dark .react-calendar__tile:enabled:hover,
+  .dark .react-calendar__tile:enabled:focus {
     background-color: #334155; /* bg-slate-700 */
   }
 
   .react-calendar__tile--now {
+    background-color: #e2e8f0; /* bg-slate-200 */
+    color: #0ea5e9; /* text-sky-500 */
+  }
+  .dark .react-calendar__tile--now {
     background-color: #334155; /* bg-slate-700 */
     color: #38bdf8; /* text-sky-400 */
   }
@@ -61,10 +87,16 @@ const customCalendarStyles = `
   }
 
   .income-marker {
+    background-color: #22c55e; /* bg-green-500 */
+  }
+  .dark .income-marker {
     background-color: #4ade80; /* bg-green-400 */
   }
 
   .expense-marker {
+    background-color: #ef4444; /* bg-red-500 */
+  }
+  .dark .expense-marker {
     background-color: #f87171; /* bg-red-400 */
   }
 `;
