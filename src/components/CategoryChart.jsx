@@ -1,5 +1,5 @@
 import React from 'react';
-import { Doughnut } from 'react-chartjs-2';
+import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -9,30 +9,25 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-function CategoryChart({ data }) {
+// A simple function to generate shades of gray for the chart
+const generateGrayShades = (numColors) => {
+  const shades = [];
+  for (let i = 0; i < numColors; i++) {
+    const intensity = 200 - i * (150 / numColors); // Start from a dark gray and get lighter
+    shades.push(`rgb(${intensity}, ${intensity}, ${intensity})`);
+  }
+  return shades;
+};
+
+export default function CategoryChart({ data }) {
   const chartData = {
-    labels: data.map(item => item.category),
+    labels: data.labels,
     datasets: [
       {
-        label: 'Gastos por Categoría',
-        data: data.map(item => item.total),
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.7)',
-          'rgba(54, 162, 235, 0.7)',
-          'rgba(255, 206, 86, 0.7)',
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(153, 102, 255, 0.7)',
-          'rgba(255, 159, 64, 0.7)',
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-        ],
-        borderWidth: 1,
+        data: data.values,
+        backgroundColor: generateGrayShades(data.labels.length),
+        borderColor: '#FFFFFF', // white border for separation
+        borderWidth: 2,
       },
     ],
   };
@@ -42,15 +37,19 @@ function CategoryChart({ data }) {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'bottom',
         labels: {
-            color: '#fff',
-            font: {
-                size: 14
-            }
-        }
+          color: '#111827', // foreground color
+          font: {
+            size: 14,
+          },
+          padding: 20,
+        },
       },
       tooltip: {
+        backgroundColor: '#111827', // primary color
+        titleColor: '#FFFFFF',
+        bodyColor: '#FFFFFF',
         callbacks: {
           label: function(context) {
             let label = context.label || '';
@@ -58,20 +57,18 @@ function CategoryChart({ data }) {
               label += ': ';
             }
             if (context.parsed !== null) {
-              label += new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(context.parsed);
+              label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
             }
             return label;
           }
         }
       }
-    }
+    },
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg h-96">
-        <Doughnut data={chartData} options={options} />
+    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg h-96">
+      <Pie data={chartData} options={options} />
     </div>
   );
 }
-
-export default CategoryChart;

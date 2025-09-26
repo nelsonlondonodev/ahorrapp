@@ -1,17 +1,15 @@
 import React from 'react';
 
-export default function SummaryCard({ title, amount, children, colorClass }) {
+export default function SummaryCard({ title, amount, icon, colorClass }) {
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg flex-1">
-      <div className="flex items-center space-x-4">
-        <div className={`p-3 rounded-full ${colorClass}`}>
-          {children}
-        </div>
+    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg flex-1">
+      <div className="flex items-center justify-between">
         <div>
-          <p className="text-slate-400 text-sm font-medium">{title}</p>
-          <p className="text-white text-2xl font-bold">
-            {amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-          </p>
+          <p className="text-accent text-sm font-medium">{title}</p>
+          <p className="text-2xl font-bold text-foreground">${amount.toFixed(2)}</p>
+        </div>
+        <div className={`p-3 rounded-full ${colorClass}`}>
+          {icon}
         </div>
       </div>
     </div>

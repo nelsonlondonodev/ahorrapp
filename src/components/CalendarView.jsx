@@ -1,119 +1,123 @@
 import React from 'react';
 import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import { TRANSACTION_TYPES } from '../constants';
 
-// Estilos personalizados para el calendario
-const customCalendarStyles = `
-  .react-calendar {
-    width: 100%;
-    border: none;
-    border-radius: 1rem;
-    background-color: #1e293b; /* bg-slate-800 */
-    color: white;
-    padding: 1rem;
-  }
+// It's better to move these styles to a separate CSS file, 
+// but for simplicity, we'll keep it here and use CSS variables from index.css
+const CalendarStyles = () => (
+  <style>{`
+    .react-calendar {
+      width: 100%;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem; /* rounded-xl */
+      padding: 1rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-lg */
+    }
 
-  .react-calendar__navigation button {
-    color: white;
-    font-size: 1.25rem;
-    font-weight: bold;
-  }
-  
-  .react-calendar__navigation button:hover,
-  .react-calendar__navigation button:focus {
-    background-color: #334155 !important; /* bg-slate-700 */
-    color: #38bdf8; /* text-sky-400 */
-  }
+    .react-calendar__navigation button {
+      color: var(--primary);
+      min-width: 44px;
+      background: none;
+      font-size: 1.25rem; /* text-xl */
+      font-weight: bold;
+    }
+    .react-calendar__navigation button:hover {
+      background-color: var(--secondary);
+    }
+    .react-calendar__navigation button:disabled {
+      color: var(--accent);
+    }
 
-  .react-calendar__month-view__weekdays__weekday {
-    color: #94a3b8; /* text-slate-400 */
-    text-transform: uppercase;
-    font-weight: bold;
-    font-size: 0.75rem;
-  }
+    .react-calendar__month-view__weekdays__weekday {
+      text-align: center;
+      font-weight: bold;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 0.75rem; /* text-xs */
+      padding: 0.5em;
+    }
 
-  .react-calendar__tile {
-    color: #cbd5e1; /* text-slate-300 */
-    border-radius: 0.5rem;
-  }
+    .react-calendar__tile {
+      background: none;
+      text-align: center;
+      line-height: 16px;
+      font-size: 0.875rem; /* text-sm */
+      padding: 1em 0.5em;
+      border-radius: 0.5rem; /* rounded-lg */
+      color: var(--foreground);
+    }
 
-  .react-calendar__tile:enabled:hover,
-  .react-calendar__tile:enabled:focus {
-    background-color: #334155; /* bg-slate-700 */
-  }
+    .react-calendar__tile:disabled {
+      color: var(--accent);
+      opacity: 0.7;
+    }
 
-  .react-calendar__tile--now {
-    background-color: #334155; /* bg-slate-700 */
-    color: #38bdf8; /* text-sky-400 */
-  }
-  
-  .react-calendar__tile--active {
-    background-color: #0ea5e9; /* bg-sky-600 */
-    color: white;
-  }
-  
-  .transaction-marker {
-    height: 8px;
-    width: 8px;
-    border-radius: 50%;
-    margin: 0 auto;
-    margin-top: 4px;
-  }
+    .react-calendar__tile:enabled:hover,
+    .react-calendar__tile:enabled:focus {
+      background-color: var(--secondary);
+    }
 
-  .income-marker {
-    background-color: #4ade80; /* bg-green-400 */
-  }
+    .react-calendar__tile--now {
+      background-color: var(--secondary);
+      font-weight: bold;
+    }
 
-  .expense-marker {
-    background-color: #f87171; /* bg-red-400 */
-  }
-`;
+    .react-calendar__tile--active {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+    }
 
-function CalendarView({ transactions, onDateClick }) {
-  const getMarkersForDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    const transactionsOnDay = transactions.filter(t => t.date === dateString);
+    .transaction-dot {
+      height: 6px;
+      width: 6px;
+      border-radius: 50%;
+      margin: 2px auto 0;
+    }
+    .income-dot {
+      background-color: var(--color-income);
+    }
+    .expense-dot {
+      background-color: var(--color-expense);
+    }
+  `}</style>
+);
 
-    if (transactionsOnDay.length === 0) return null;
+export default function CalendarView({ transactions, onDateClick }) {
+  const tileContent = ({ date, view }) => {
+    if (view === 'month') {
+      const dayTransactions = transactions.filter(t => new Date(t.date).toDateString() === date.toDateString());
+      const hasIncome = dayTransactions.some(t => t.type === TRANSACTION_TYPES.INCOME);
+      const hasExpense = dayTransactions.some(t => t.type === TRANSACTION_TYPES.EXPENSE);
 
-    const hasIncome = transactionsOnDay.some(t => t.type === 'income');
-    const hasExpense = transactionsOnDay.some(t => t.type === 'expense');
-
-    return (
-      <div className="flex justify-center space-x-1">
-        {hasIncome && <div className="transaction-marker income-marker"></div>}
-        {hasExpense && <div className="transaction-marker expense-marker"></div>}
-      </div>
-    );
+      return (
+        <div className="flex justify-center items-center">
+          {hasIncome && <div className="transaction-dot income-dot"></div>}
+          {hasExpense && <div className="transaction-dot expense-dot"></div>}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
-    <div>
-      <style>{customCalendarStyles}</style>
+    <div className="bg-card border border-border p-4 rounded-2xl shadow-lg">
+      <CalendarStyles />
       <Calendar
-        onClickDay={(date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            onDateClick(`${year}-${month}-${day}`);
-        }}
-        tileContent={({ date, view }) => view === 'month' && getMarkersForDate(date)}
+        onChange={onDateClick}
+        tileContent={tileContent}
+        className="text-foreground"
       />
-      <div className="mt-4 flex justify-center space-x-4 text-sm text-slate-400">
-          <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-green-400 mr-2"></div>
-              <span>Ingresos</span>
-          </div>
-          <div className="flex items-center">
-              <div className="h-3 w-3 rounded-full bg-red-400 mr-2"></div>
-              <span>Gastos</span>
-          </div>
+      <div className="mt-4 flex justify-center space-x-4 text-sm text-accent">
+        <div className="flex items-center">
+          <div className="h-3 w-3 rounded-full income-dot mr-2"></div>
+          <span>Ingresos</span>
+        </div>
+        <div className="flex items-center">
+          <div className="h-3 w-3 rounded-full expense-dot mr-2"></div>
+          <span>Gastos</span>
+        </div>
       </div>
     </div>
   );
 }
-
-export default CalendarView;

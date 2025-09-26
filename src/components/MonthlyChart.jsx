@@ -11,7 +11,6 @@ import {
   Legend,
 } from 'chart.js';
 
-// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -22,67 +21,71 @@ ChartJS.register(
   Legend
 );
 
-const MonthlyChart = ({ data }) => {
+export default function MonthlyChart({ data }) {
+  const chartData = {
+    labels: data.labels,
+    datasets: [
+      {
+        label: 'Ingresos',
+        data: data.incomeValues,
+        borderColor: 'var(--color-income)', // green-500
+        backgroundColor: 'var(--color-income)',
+        tension: 0.3,
+      },
+      {
+        label: 'Gastos',
+        data: data.expenseValues,
+        borderColor: 'var(--color-expense)', // red-500
+        backgroundColor: 'var(--color-expense)',
+        tension: 0.3,
+      },
+    ],
+  };
+
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'bottom',
         labels: {
-          color: '#cbd5e1', // slate-300
-        },
-      },
-      title: {
-        display: true,
-        text: 'Ingresos vs. Gastos Mensuales',
-        color: '#f8fafc', // slate-50
-        font: {
-          size: 18,
+          color: 'var(--foreground)', // text-foreground
+          font: {
+            size: 14,
+          },
+          padding: 20,
         },
       },
       tooltip: {
-        callbacks: {
-          label: function(context) {
-            let label = context.dataset.label || '';
-            if (label) {
-              label += ': ';
-            }
-            if (context.parsed.y !== null) {
-              label += new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
-            }
-            return label;
-          }
-        }
-      }
+        backgroundColor: 'var(--primary)', // bg-primary
+        titleColor: 'var(--primary-foreground)',
+        bodyColor: 'var(--primary-foreground)',
+      },
     },
     scales: {
-      x: {
-        ticks: {
-          color: '#94a3b8', // slate-400
-        },
+      y: {
+        beginAtZero: true,
         grid: {
-          color: 'rgba(100, 116, 139, 0.2)', // slate-500 with transparency
+          color: 'var(--border)', // border color for grid lines
+        },
+        ticks: {
+          color: 'var(--accent)', // text-accent for ticks
         },
       },
-      y: {
-        ticks: {
-          color: '#94a3b8', // slate-400
-          callback: function(value) {
-            return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
-          }
-        },
+      x: {
         grid: {
-          color: 'rgba(100, 116, 139, 0.2)', // slate-500 with transparency
+          display: false, // Hide vertical grid lines
+        },
+        ticks: {
+          color: 'var(--accent)', // text-accent for ticks
         },
       },
     },
   };
 
   return (
-    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg">
-      <Line options={options} data={data} />
+    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg">
+      <Line data={chartData} options={options} />
     </div>
   );
-};
-
-export default MonthlyChart;
+}

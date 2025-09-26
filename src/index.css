@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #FFFFFF;
+    --foreground: #111827;
+    --card: #FFFFFF;
+    --card-foreground: #111827;
+    --primary: #111827;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F3F4F6;
+    --secondary-foreground: #111827;
+    --accent: #4B5563;
+    --border: #E5E7EB;
+    --input: #F3F4F6;
+    --ring: #9CA3AF;
+
+    /* Custom colors for charts and calendar */
+    --color-income: #22c55e; /* green-500 */
+    --color-expense: #ef4444; /* red-500 */
+    --color-balance: #3b82f6; /* blue-500 */
+  }
+}

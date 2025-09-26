@@ -1,71 +1,68 @@
 import React from 'react';
 import TransactionItem from './TransactionItem';
-import { TRANSACTION_TYPES, VIEW_MODES } from '../constants';
+import { TRANSACTION_TYPES } from '../constants';
 
-const ListView = ({ transactions, filterControls, paginationControls, openModalForEdit, deleteTransaction }) => {
+export default function ListView({
+  transactions,
+  filterControls,
+  paginationControls,
+  openModalForEdit,
+  deleteTransaction
+}) {
   return (
-    <div>
-      {/* Filtros de tipo */}
-      <div className="flex justify-center space-x-2 mb-6 bg-slate-800 p-1 rounded-lg">
-        <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.ALL)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.ALL ? 'bg-sky-600' : 'hover:bg-slate-700'}`}>Todos</button>
-        <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.INCOME)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.INCOME ? 'bg-green-600' : 'hover:bg-slate-700'}`}>Ingresos</button>
-        <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.EXPENSE)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.EXPENSE ? 'bg-red-600' : 'hover:bg-slate-700'}`}>Gastos</button>
+    <div className="bg-card border border-border p-6 rounded-2xl shadow-lg">
+      <div className="flex justify-center space-x-2 mb-6 bg-secondary p-1 rounded-lg">
+        <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.ALL)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.ALL ? 'bg-primary text-primary-foreground' : 'hover:bg-border'}`}>Todos</button>
+        <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.INCOME)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.INCOME ? 'bg-green-600 text-white' : 'hover:bg-border'}`}>Ingresos</button>
+        <button onClick={() => filterControls.setTypeFilter(TRANSACTION_TYPES.EXPENSE)} className={`w-full py-2 rounded-md font-bold transition-colors ${filterControls.typeFilter === TRANSACTION_TYPES.EXPENSE ? 'bg-red-600 text-white' : 'hover:bg-border'}`}>Gastos</button>
       </div>
 
-      {/* Controles de Ordenación */}
-      <div className="flex justify-end mb-4">
-        <select 
-          onChange={(e) => {
-            const [key, order] = e.target.value.split('-');
-            filterControls.setSortKey(key);
-            filterControls.setSortOrder(order);
-          }}
-          value={`${filterControls.sortKey}-${filterControls.sortOrder}`}
-          className="bg-slate-800 text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-        >
-          <option value="date-desc">Fecha (Más reciente)</option>
-          <option value="date-asc">Fecha (Más antigua)</option>
-          <option value="amount-desc">Cantidad (Mayor a menor)</option>
-          <option value="amount-asc">Cantidad (Menor a mayor)</option>
-          <option value="description-asc">Descripción (A-Z)</option>
-          <option value="description-desc">Descripción (Z-A)</option>
-        </select>
-      </div>
-
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-white">
-          {filterControls.selectedDate 
-            ? `Transacciones del ${new Date(filterControls.selectedDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Europe/Madrid' })}`
-            : 'Transacciones Recientes'}
-        </h2>
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+        <div className="flex items-center space-x-4">
+          <label htmlFor="date-filter" className="font-bold text-foreground">Filtrar por fecha:</label>
+          <input 
+            id="date-filter"
+            type="date" 
+            value={filterControls.selectedDate ? new Date(filterControls.selectedDate).toISOString().slice(0, 10) : ''} 
+            onChange={(e) => filterControls.setSelectedDate(e.target.value ? new Date(e.target.value) : null)}
+            className="bg-input text-foreground p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
         {filterControls.selectedDate && (
-          <button onClick={() => filterControls.setSelectedDate(null)} className="text-sky-400 hover:text-sky-300 font-bold">
-            Mostrar todas
+          <button onClick={() => filterControls.setSelectedDate(null)} className="text-primary hover:underline font-bold">
+            Limpiar filtro
           </button>
         )}
       </div>
-      <ul>
+
+      <ul className="space-y-3 mb-6">
         {transactions.length > 0 
-          ? transactions.map(tx => <TransactionItem key={tx.id} transaction={tx} onEdit={openModalForEdit} onDelete={deleteTransaction} />)
-          : <p className="text-slate-500 text-center py-8">No hay transacciones que coincidan con los filtros seleccionados.</p>
+          ? transactions.map(transaction => (
+              <TransactionItem 
+                key={transaction.id} 
+                transaction={transaction} 
+                onEdit={openModalForEdit}
+                onDelete={deleteTransaction}
+              />
+            ))
+          : <p className="text-accent text-center py-8">No hay transacciones que coincidan con los filtros seleccionados.</p>
         }
       </ul>
 
-      {/* Controles de Paginación */}
       {paginationControls.totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-4 mt-6">
+        <div className="flex justify-between items-center pt-4 border-t border-border">
           <button 
-            onClick={() => paginationControls.setCurrentPage(p => p - 1)} 
+            onClick={paginationControls.goToPreviousPage} 
             disabled={paginationControls.currentPage === 1}
-            className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-secondary text-secondary-foreground font-bold py-2 px-4 rounded-lg hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Anterior
           </button>
-          <span className="text-slate-400">Página {paginationControls.currentPage} de {paginationControls.totalPages}</span>
+          <span className="text-accent">Página {paginationControls.currentPage} de {paginationControls.totalPages}</span>
           <button 
-            onClick={() => paginationControls.setCurrentPage(p => p + 1)} 
+            onClick={paginationControls.goToNextPage} 
             disabled={paginationControls.currentPage === paginationControls.totalPages}
-            className="bg-slate-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-secondary text-secondary-foreground font-bold py-2 px-4 rounded-lg hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Siguiente
           </button>
@@ -73,6 +70,4 @@ const ListView = ({ transactions, filterControls, paginationControls, openModalF
       )}
     </div>
   );
-};
-
-export default ListView;
+}
