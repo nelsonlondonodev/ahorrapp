@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
+import { GoogleIcon, MailIcon, MagicLinkIcon } from './Icons'; // Importar los nuevos iconos
 
 export default function Auth({ supabase }) {
     const [loading, setLoading] = useState(false);
@@ -106,17 +107,19 @@ export default function Auth({ supabase }) {
                     <div className="mt-6 space-y-4">
                         <button 
                             type="submit"
-                            className="w-full bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50"
+                            className="w-full flex items-center justify-center bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors shadow-lg shadow-sky-600/20 disabled:opacity-50"
                             disabled={loading}
                         >
-                            {loading ? <span>Iniciando...</span> : <span>Iniciar Sesión</span>}
+                            <MailIcon className="w-5 h-5 mr-2" />
+                            {loading ? <span>Iniciando...</span> : <span>Iniciar Sesión con Correo</span>}
                         </button>
                         <button 
                             type="button"
                             onClick={handleMagicLinkLogin}
-                            className="w-full bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors shadow-lg shadow-slate-600/20 disabled:opacity-50"
+                            className="w-full flex items-center justify-center bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-colors shadow-lg shadow-slate-600/20 disabled:opacity-50"
                             disabled={loading}
                         >
+                            <MagicLinkIcon className="w-5 h-5 mr-2" />
                             {loading ? <span>Enviando...</span> : <span>Enviar enlace mágico</span>}
                         </button>
                     </div>
@@ -130,9 +133,10 @@ export default function Auth({ supabase }) {
 
                 <button
                     onClick={handleGoogleLogin}
-                    className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+                    className="w-full flex items-center justify-center bg-white text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors shadow-lg disabled:opacity-50"
                     disabled={loading}
                 >
+                    <GoogleIcon className="w-5 h-5 mr-3" />
                     Iniciar sesión con Google
                 </button>
             </div>
