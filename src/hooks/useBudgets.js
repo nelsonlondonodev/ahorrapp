@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, selectBudgetsWithSpending } from '../store/useAppStore';
 
 export const useBudgets = (session) => {
   const {
@@ -7,10 +7,9 @@ export const useBudgets = (session) => {
     handleAddBudget,
     handleUpdateBudget,
     handleDeleteBudget,
-    getBudgetsWithSpending, // Nueva función para obtener presupuestos con gasto
   } = useAppStore();
 
-  const budgetsWithSpending = getBudgetsWithSpending(); // Obtenemos los presupuestos con gasto
+  const budgetsWithSpending = useAppStore(selectBudgetsWithSpending);
 
   useEffect(() => {
     if (session) {
@@ -19,7 +18,7 @@ export const useBudgets = (session) => {
   }, [session, fetchBudgets]);
 
   return {
-    budgets: budgetsWithSpending, // Devolvemos los presupuestos con gasto
+    budgets: budgetsWithSpending,
     handleAddBudget,
     handleUpdateBudget,
     handleDeleteBudget,

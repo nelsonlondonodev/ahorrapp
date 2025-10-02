@@ -164,22 +164,6 @@ export const useAppStore = create((set, get) => ({
     return [...new Set(budgetCategories)].sort();
   },
 
-  getBudgetsWithSpending: () => {
-    const { budgets, transactions } = get();
-    return budgets.map(budget => {
-      const spentAmount = transactions
-        .filter(t => t.category === budget.category && t.type === TRANSACTION_TYPES.EXPENSE)
-        .reduce((sum, t) => sum + t.amount, 0);
-      return {
-        ...budget,
-        spentAmount,
-        remainingAmount: budget.amount - spentAmount,
-        isOverspent: spentAmount > budget.amount,
-        isFullySpent: spentAmount >= budget.amount && spentAmount > 0,
-      };
-    });
-  },
-
   getAvailableCategories: () => {
     const { transactions, budgets } = get();
     const transactionCategories = transactions.map(t => t.category).filter(Boolean);
@@ -188,3 +172,38 @@ export const useAppStore = create((set, get) => ({
     return combined.sort();
   },
 }));
+
+let lastBudgets = null;
+let lastTransactions = null;
+let lastResult = null;
+
+export const selectBudgetsWithSpending = (state) => {
+  const { budgets, transactions } = state;
+  if (!budgets || !transactions) return [];
+
+  // Si los datos de entrada no han cambiado, devolvemos el resultado cacheado
+  if (budgets === lastBudgets && transactions === lastTransactions) {
+    return lastResult;
+  }
+
+  // Si han cambiado, calculamos el nuevo resultado
+  const result = budgets.map(budget => {
+    const spentAmount = transactions
+      .filter(t => t.category === budget.category && t.type === TRANSACTION_TYPES.EXPENSE)
+      .reduce((sum, t) => sum + t.amount, 0);
+    return {
+      ...budget,
+      spentAmount,
+      remainingAmount: budget.amount - spentAmount,
+      isOverspent: spentAmount > budget.amount,
+      isFullySpent: spentAmount >= budget.amount && spentAmount > 0,
+    };
+  });
+
+  // Actualizamos la caché
+  lastBudgets = budgets;
+  lastTransactions = transactions;
+  lastResult = result;
+
+  return result;
+};

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { CATEGORIES, TRANSACTION_TYPES } from '../constants';
-import { useAppStore } from '../store/useAppStore';
+import { selectBudgetsWithSpending, useAppStore } from '../store/useAppStore';
 import { EditIcon, TrashIcon, PlusIcon } from './Icons';
 
 const BudgetModal = ({ budget, onClose, onSave }) => {
@@ -105,7 +105,7 @@ export default function BudgetManager({ budgets, onAddBudget, onUpdateBudget, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
 
-  const budgetsWithSpending = useAppStore(state => state.getBudgetsWithSpending());
+  const budgetsWithSpending = useAppStore(selectBudgetsWithSpending);
 
   const openModalForEdit = (budget) => {
     setEditingBudget(budget);
